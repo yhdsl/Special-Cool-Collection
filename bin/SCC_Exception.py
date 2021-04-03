@@ -38,3 +38,24 @@ class ColunmValuesLessError(Exception):
     """数据过少"""
     def __str__(self):
         return Local.GetTranslation('SCC_Database', 'ColunmValuesLessError').translation
+
+# 配置库异常部分
+# SCC_Configuration
+
+
+class ConfigDBAddError(Exception):
+    """DB中配置已存在"""
+    def __str__(self):
+        return Local.GetTranslation('SCC_Database', 'ConfigDBAddError').translation
+
+
+class ConfigDBDropError(Exception):
+    """DB中配置已存在"""
+    def __str__(self):
+        return Local.GetTranslation('SCC_Database', 'ConfigDBDropError').translation
+
+
+class ConfigDBUpError(Exception):
+    """DB中配置已存在"""
+    def __str__(self):
+        return Local.GetTranslation('SCC_Database', 'ConfigDBUpError').translation
