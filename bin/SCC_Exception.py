@@ -32,3 +32,9 @@ class ColunmError(Exception):
     """表名不存在，进行列操作"""
     def __str__(self):
         return Local.GetTranslation('SCC_Database', 'ColunmError').translation
+
+
+class ColunmValuesLessError(Exception):
+    """数据过少"""
+    def __str__(self):
+        return Local.GetTranslation('SCC_Database', 'ColunmValuesLessError').translation
