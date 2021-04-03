@@ -1,6 +1,5 @@
 """
-**模块说明** 软件的本地化模块，不包括PYQT的GUI部分
-
+**模块说明** 软件的本地化模块，不包括PYQT的GUI部分 \n
 **模块状态** DEBUG
 """
 
@@ -11,13 +10,11 @@ DEFAULT_LOCAL_LANGUAGE = 'zh-CN'  # TODO(中期) 允许自定义语言
 
 class GetTranslation:
     """
-    *类参数*
-
+    *类参数* \n
     **module_name (str)** 调用此类的模块名
     **translation_name (str)** 需翻译的键值
 
-    *类属性*
-
+    *类属性* \n
     **translation (str)** 返回已翻译的文本
 
     """
@@ -28,7 +25,7 @@ class GetTranslation:
 
     def _get_translation(self, module_name: str, translation_name: str):
         """
-        私有的翻译获取方法
+        从ini文件中获取翻译
 
         :param module_name: 调用此类的模块名
         :param translation_name: 需翻译的键值
