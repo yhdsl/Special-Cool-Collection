@@ -1,6 +1,5 @@
 """
-**模块说明** 软件的底层数据库模块，已提供基本的数据检验
-
+**模块说明** 软件的底层数据库模块，已提供基本的数据检验 \n
 **模块状态** 开发中
 """
 
@@ -13,17 +12,14 @@ class SQLDBGetStart:
     """
     返回指定数据库的connect对象或创建一个新的数据库
 
-    *类参数*
-
+    *类参数* \n
     **db_adress (str)** 指定的数据库地址
-    **create_db (bool -> False)** 设置为True以允许创建一个空的数据库
+    **create_db (bool -> False)** 设置为True以允许创建一个 新的空数据库
 
-    *类属性*
-
+    *类属性* \n
     **.con (sqlite3.connect)** 返回指定数据库的connect对象
 
-    *类异常*
-
+    *类异常* \n
     **SCC_Exception.DBNotExistError** 数据库不存在
     """
 
@@ -33,7 +29,7 @@ class SQLDBGetStart:
     @staticmethod
     def _get_con(db_adress: str, create_db=False):
         """
-        私有的数据库con对象获取方法
+        数据库的con对象获取方法
 
         :param db_adress: 指定的数据库地址
         :param create_db: 设置为True以允许创建一个空的数据库
@@ -48,20 +44,19 @@ class SQLDBUsefulMethod:
     """
     提供con常用的部分方法
 
-    *类属性*
-
+    *类属性* \n
     **db_con** 数据库的con类
 
-    *类方法*
-    **con_close** con安全退出
-    **con_exit_check** con提交检查
+    *类方法* \n
+    **con_safe_close** con安全退出 \n
+    **con_exit_check** con提交检查 \n
     **con_get_cur** 获取cur类
     """
 
     def __init__(self, db_con):
         self._con = db_con
 
-    def con_close(self):
+    def con_safe_close(self):
         self._con.commit()
         self._con.close()
         return
@@ -87,12 +82,10 @@ class SQLTableMethod:
     """
     提供表的新建和删除方法，以及提供所有表名的列表
 
-    *类属性*
-
+    *类属性* \n
     **db_con** 数据库的con类
 
-    *类方法*
-
+    *类方法* \n
     **table_create(table_name: str, table_rules: str)** 创建指定规则的表 \n
     **table_drop(table_name: str)** 删除指定的表 \n
     **table_list** 返回数据库所有的表名
@@ -103,10 +96,10 @@ class SQLTableMethod:
 
     def _table_exist_check(self, table_name: str, table_list_return=False):
         """
-        私有的表名检查
+        表名检查
         :param table_name: 表名
         :param table_list_return: 设置为True以允许返回表名列表
-        :return: BOOL或表名列表
+        :return: Bool或表名列表
         """
         cur = SQLDBUsefulMethod(self._con).con_get_cur()
         cur("SELECT tbl_name FROM sqlite_master WHERE type = 'table'")
@@ -145,11 +138,23 @@ class SQLColumnMethod:
 
 
 class SQLWhereMethod:
-    def __init__(self):
-        pass
+    """
+    目前该方法不完善
+    """
+
+    def __init__(self, where_auto=False, where_user=''):
+        self.where_return = self._where_get(where_auto=where_auto, where_user=where_user)
 
     @staticmethod
     def _where_create_one(where_id: int, where_tup: tuple, add_not=False):
+        """
+        构建单个where语句
+
+        :param where_id: 指定的where语句类型
+        :param where_tup: where语句可用参数
+        :param add_not: 是否加入NOT
+        :return: 不带where的完整语句部分
+        """
         if where_id == 0:
             return f"BETWEEN {where_tup[0]} AND {where_tup[1]}"
         elif where_id == 1:
@@ -180,8 +185,12 @@ class SQLWhereMethod:
             where_fin += i
         return where_fin[:-1]
 
-    def _wwhere_get(self):
-        pass
+    @staticmethod
+    def _where_get(where_auto, where_user):
+        where_return = ''
+        if not where_auto:
+            where_return = where_user
+        return where_return
 
 
 if __name__ == '__main__':
