@@ -26,3 +26,9 @@ class TableDropError(Exception):
     """表名不存在，无法删除"""
     def __str__(self):
         return Local.GetTranslation('SCC_Database', 'TableDropError').translation
+
+
+class ColunmError(Exception):
+    """表名不存在，进行列操作"""
+    def __str__(self):
+        return Local.GetTranslation('SCC_Database', 'ColunmError').translation

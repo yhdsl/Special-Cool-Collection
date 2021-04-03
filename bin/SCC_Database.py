@@ -24,7 +24,7 @@ class SQLDBGetStart:
     """
 
     def __init__(self, db_adress: str, create_db=False):
-        self._con = self._get_con(db_adress, create_db=create_db)
+        self.con = self._get_con(db_adress, create_db=create_db)
 
     @staticmethod
     def _get_con(db_adress: str, create_db=False):
@@ -102,7 +102,7 @@ class SQLTableMethod:
         :return: Bool或表名列表
         """
         cur = SQLDBUsefulMethod(self._con).con_get_cur()
-        cur("SELECT tbl_name FROM sqlite_master WHERE type = 'table'")
+        cur.execute("SELECT tbl_name FROM sqlite_master WHERE type = 'table'")
         table_list = cur.fetchall()
         if table_list_return:
             return table_list
@@ -129,12 +129,52 @@ class SQLTableMethod:
         return
 
     def table_list(self):
-        return self._table_exist_check(table_name='table_name', table_list_return=True)
+        table_list_tup = self._table_exist_check(table_name='table_name', table_list_return=True)
+        table_list = []
+        for i in table_list_tup:
+            table_list.append(i[0])
+        return table_list
 
 
 class SQLColumnMethod:
-    def __init__(self, db_con):
+    def __init__(self, db_con, table_name, where_user='True'):
         self._con = db_con
+        self.table = table_name
+        self.where = where_user
+        self._table_check()
+
+    def _table_check(self):
+        table_list = SQLTableMethod(self._con).table_list()
+        if self.table not in table_list:
+            raise SCC_Exception.ColunmError
+        return
+
+    def column_insert(self, column_tup: tuple, value_tup: tuple):
+        column_add = ','.join(column_tup)
+        value_add = ','.join(value_tup[: len(column_tup) + 1])
+        self._con.execute(f"INSERT INTO {self.table} ({column_add}) VALUES ({value_add})")
+        return
+
+    def column_delete(self):
+        self._con.execute(f"DELETE FROM {self.table} WHERE {self.where}")
+        return
+
+    def column_update(self, column_tup: tuple, value_tup: tuple):
+        update_add = []
+        for i in column_tup:
+            update_add.append(f"{i} = {value_tup[column_tup.index(i)]}")
+        update_add = ','.join(update_add)
+        self._con.execute(f"UPDATE {self.table} SET {update_add} WHERE {self.where}")
+        return
+
+    def column_select(self, column_tup: tuple, fetch_number=0):
+        column_add = ','.join(column_tup)
+        cur = SQLDBUsefulMethod(self._con).con_get_cur()
+        cur.execute(f"SELECT {column_add} FROM {self.table} WHERE {self.where}")
+        if not fetch_number:
+            return cur.fetchall()
+        else:
+            return cur.fetchmany(size=fetch_number)
 
 
 class SQLWhereMethod:
@@ -194,7 +234,8 @@ class SQLWhereMethod:
 
 
 if __name__ == '__main__':
-    # test_address = r"D:\Programs\Programs\Working\Special-Cool-Collection\test\test1.db"
-    # tset_1 = SQLDBGetStart(test_address, create_db=True)
-    # test_ = tset_1.con
-    test_2 = SQLDBUsefulMethod('1')
+    test_address = r"D:\Programs\Programs\Working\Special-Cool-Collection\test\Juzi_database.db"
+    test_1 = SQLDBGetStart(test_address).con
+    test_2 = SQLColumnMethod(test_1, 'Juzidata_old', where_user='True')
+    test_2.column_delete()
+    SQLDBUsefulMethod(test_1).con_safe_close()
