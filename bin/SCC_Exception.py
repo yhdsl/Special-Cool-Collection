@@ -59,3 +59,15 @@ class ConfigDBUpError(Exception):
     """DB中配置已存在"""
     def __str__(self):
         return Local.GetTranslation('SCC_Configuration', 'ConfigDBUpError').translation
+
+
+class ConfigDBBoolError(Exception):
+    """布尔值转换错误"""
+    def __str__(self):
+        return Local.GetTranslation('SCC_Configuration', 'ConfigDBBoolError').translation
+
+
+class ConfigDBGetError(Exception):
+    """DB中没有该配置名称"""
+    def __str__(self):
+        return Local.GetTranslation('SCC_Configuration', 'ConfigDBGetError').translation
