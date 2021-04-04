@@ -149,10 +149,11 @@ class SQLColumnMethod:
 
     *类方法* \n
     数据的修改以column_tup为主，value_tup中多余的数据将被忽略 \n
+    下文中where_tup为WHERE语句中占位符的传入数据元组
     **column_insert(column_tup: tuple, value_tup: tuple)** 增加数据 \n
-    **column_delete** 删除数据 \n
-    **column_update(column_tup: tuple, value_tup: tuple)** 更新数据 \n
-    **column_select(column_tup: tuple, fetch_number=0) (list)** 返回指定数量的搜索结果，默认为全部
+    **column_delete(where_tup=None)** 删除数据 \n
+    **column_update(column_tup: tuple, value_tup: tuple, where_tup=None)** 更新数据 \n
+    **column_select(column_tup: tuple, fetch_number=0, where_tup=None) (list)** 返回指定数量的搜索结果，默认为全部
 
     *类异常* \n
     **SCC_Exception.ColunmError** 表名不存在
@@ -181,24 +182,31 @@ class SQLColumnMethod:
                           value_tup[:len(column_tup)])
         return
 
-    def column_delete(self):
-        self._con.execute(f"DELETE FROM {self.table} WHERE {self.where}")
+    def column_delete(self, where_tup=None):
+        if not where_tup:
+            where_tup = ()
+        self._con.execute(f"DELETE FROM {self.table} WHERE {self.where}", where_tup)
         return
 
-    def column_update(self, column_tup: tuple, value_tup: tuple):
+    def column_update(self, column_tup: tuple, value_tup: tuple, where_tup=None):
+        if not where_tup:
+            where_tup = ()
         if len(value_tup) < len(column_tup):
             raise SCC_Exception.ColunmValuesLessError
         update_add = []
         for i in column_tup:
             update_add.append(f"{i} = ?")
         update_add = ','.join(update_add)
-        self._con.execute(f"UPDATE {self.table} SET {update_add} WHERE {self.where}", value_tup[:len(column_tup)])
+        self._con.execute(f"UPDATE {self.table} SET {update_add} WHERE {self.where}",
+                          value_tup[:len(column_tup)] + where_tup)
         return
 
-    def column_select(self, column_tup: tuple, fetch_number=0):
+    def column_select(self, column_tup: tuple, fetch_number=0, where_tup=None):
+        if not where_tup:
+            where_tup = ()
         column_add = ','.join(column_tup)
         cur = SQLDBUsefulMethod(self._con).con_get_cur()
-        cur.execute(f"SELECT {column_add} FROM {self.table} WHERE {self.where}")
+        cur.execute(f"SELECT {column_add} FROM {self.table} WHERE {self.where}", where_tup)
         if fetch_number <= 0:
             return cur.fetchall()
         else:
