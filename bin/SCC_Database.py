@@ -159,7 +159,7 @@ class SQLColumnMethod:
     **SCC_Exception.ColunmValuesLessError** 提供的数据过少
     """
 
-    def __init__(self, db_con, table_name, where_user='True'):
+    def __init__(self, db_con, table_name: str, where_user='True'):
         self._con = db_con
         self.table = table_name
         self.where = where_user
