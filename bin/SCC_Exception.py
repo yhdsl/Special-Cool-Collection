@@ -46,16 +46,16 @@ class ColunmValuesLessError(Exception):
 class ConfigDBAddError(Exception):
     """DB中配置已存在"""
     def __str__(self):
-        return Local.GetTranslation('SCC_Database', 'ConfigDBAddError').translation
+        return Local.GetTranslation('SCC_Configuration', 'ConfigDBAddError').translation
 
 
 class ConfigDBDropError(Exception):
     """DB中配置已存在"""
     def __str__(self):
-        return Local.GetTranslation('SCC_Database', 'ConfigDBDropError').translation
+        return Local.GetTranslation('SCC_Configuration', 'ConfigDBDropError').translation
 
 
 class ConfigDBUpError(Exception):
     """DB中配置已存在"""
     def __str__(self):
-        return Local.GetTranslation('SCC_Database', 'ConfigDBUpError').translation
+        return Local.GetTranslation('SCC_Configuration', 'ConfigDBUpError').translation
