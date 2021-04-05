@@ -22,6 +22,9 @@ DEFAULT_BOOL_TRUE = ('1', 'yes', 'true', 'on')
 # 视为FALSE的配置，大小写不敏感
 DEFAULT_BOOL_FALSE = ('0', 'no', 'false', 'off')
 
+# 默认INI文件存储地址
+DEFAULT_INI_ADDRESS = r'Configuration\\'
+
 
 class _ConfigDB:
     """
@@ -29,11 +32,12 @@ class _ConfigDB:
 
     *类参数* \n
     **db_name (str)** db数据库名称 \n
-    **module_name (str)** 调用该类的模块名称，这将作为表名传入 \n
+    **module_name='' (str)** 调用该类的模块名称，这将作为表名传入 \n
     **config_name='' (str)** 需要操作的配置名称，可通过类属性实现变化 \n
     **create_db=False (bool)** 设置为True以便于创建一个新的空数据库，**若原数据库存在将被删除**
 
     *类属性* \n
+    **module (str)** 重写该属性以便于对不同的表进行操作 \n
     **config (str)** 重写该属性以便于对不同的配置进行操作
 
     *类方法* \n
@@ -48,28 +52,40 @@ class _ConfigDB:
     **db_close()** 提交所有的修改\n
     """
 
-    def __init__(self, db_name: str, module_name: str, config_name='', create_db=False):
+    def __init__(self, db_name: str, module_name='', config_name='', create_db=False):
         self._con = SCC_Database.SQLDBGetStart(DEFAULT_DB_ADDRESS + db_name, create_db=create_db).con
-        self._table = module_name
+        self.module = module_name
         self.config = config_name
 
     def table_create(self):
-        SCC_Database.SQLTableMethod(self._con).table_create(self._table, DEFAULT_TABLE_RULE)
+        SCC_Database.SQLTableMethod(self._con).table_create(self.module, DEFAULT_TABLE_RULE)
         return
 
     def table_del(self):
-        SCC_Database.SQLTableMethod(self._con).table_drop(self._table)
+        SCC_Database.SQLTableMethod(self._con).table_drop(self.module)
         return
 
     def table_name_tup(self):
         return SCC_Database.SQLTableMethod(self._con).table_tup()
 
     def config_name_tup(self):
-        config_name = SCC_Database.SQLColumnMethod(self._con, self._table).column_select(('config',))
+        config_name = SCC_Database.SQLColumnMethod(self._con, self.module).column_select(('config',))
         config_name_list = []
         for i in config_name:
             config_name_list.append(i[0])
         return tuple(config_name_list)
+
+    def changeable_name_tup(self):
+        changeable_name = SCC_Database.SQLColumnMethod(self._con, self.module, where_user="changeable = ?").\
+            column_select(column_tup=("config", ), where_tup=(1, ))
+        if not changeable_name:
+            changeable_name_tup = ()
+        else:
+            changeable_name_list = []
+            for i in changeable_name:
+                changeable_name_list.append(i[0])
+            changeable_name_tup = tuple(changeable_name_list)
+        return changeable_name_tup
 
     def value_create(self, value: str, changeable=0, note='', db_type='str'):
         if changeable <= 0:
@@ -79,7 +95,7 @@ class _ConfigDB:
         if db_type not in DEFAULE_TYPE_TUP:
             db_type = 'str'
         if self.config not in self.config_name_tup():
-            SCC_Database.SQLColumnMethod(self._con, self._table).column_insert((
+            SCC_Database.SQLColumnMethod(self._con, self.module).column_insert((
                 "config", "value", "changeable", "note", "type"), (self.config, value, changeable, note, db_type))
         else:
             raise SCC_Exception.ConfigDBAddError
@@ -89,7 +105,7 @@ class _ConfigDB:
         if self.config not in self.config_name_tup():
             raise SCC_Exception.ConfigDBDropError
         else:
-            SCC_Database.SQLColumnMethod(self._con, self._table, where_user=f"config IS ?"). \
+            SCC_Database.SQLColumnMethod(self._con, self.module, where_user="config IS ?"). \
                 column_delete(where_tup=(self.config,))
         return
 
@@ -97,7 +113,7 @@ class _ConfigDB:
         if self.config not in self.config_name_tup():
             raise SCC_Exception.ConfigDBGetError
         else:
-            value_get = SCC_Database.SQLColumnMethod(self._con, self._table, where_user=f"config IS ?"). \
+            value_get = SCC_Database.SQLColumnMethod(self._con, self.module, where_user="config IS ?"). \
                 column_select(("config", "value", "changeable", "note", "type"), fetch_number=1,
                               where_tup=(self.config,))[0]
             value_get = list(value_get)
@@ -140,7 +156,7 @@ class _ConfigDB:
         if self.config not in self.config_name_tup():
             raise SCC_Exception.ConfigDBDropError
         else:
-            SCC_Database.SQLColumnMethod(self._con, self._table, where_user=f"config Is ?") \
+            SCC_Database.SQLColumnMethod(self._con, self.module, where_user="config Is ?") \
                 .column_update(tuple(config_list), tuple(value_list), where_tup=(self.config,))
         return
 
@@ -149,13 +165,66 @@ class _ConfigDB:
         return
 
 
-class _ConfigINI:
-    pass
+class _ConfigINI: # TODO(短期) 需要解决自带模块的缺点
+    def __init__(self, ini_name: str, module_name='', config_name=''):
+        self._configparser = self._configparser_get(ini_name)
+        self.module = module_name
+        self.config = config_name
+
+    @staticmethod
+    def _configparser_get(ini_name: str):
+        """
+        用于返回读取ini文件的ConfigParser类
+
+        :param ini_name: 文件名称
+        :return: ConfigParser类
+        """
+        configparser_get = configparser.ConfigParser()
+        configparser_get.read_file(open(DEFAULT_INI_ADDRESS + ini_name, mode='r+', encoding='utf8'))
+        return configparser_get
+
+    def sections_name_tup(self):
+        return tuple(self._configparser.sections())
+
+    def config_name_tup(self):
+        return tuple(self._configparser.options(self.module))
+
+    def sections_create(self):
+        self._configparser.add_section(self.module)
+        return
+
+    def sections_del(self):
+        self._configparser.remove_section(self.module)
+        return
+
+    def config_create(self, value: str):
+        self._configparser.set(self.module, self.config, value)
+        return
+
+    def config_updata(self, value: str):
+        self.config_create(value)
+        return
+
+    def config_del(self):
+        self._configparser.remove_option(self.module, self.config)
+        return
+
+    def config_get(self):
+        return self._configparser.get(self.module, self.config)
+
+    def config_getint(self):
+        return self._configparser.getint(self.module, self.config)
+
+    def config_getfloat(self):
+        return self._configparser.getfloat(self.module, self.config)
+
+    def config_getbool(self):
+        return self._configparser.getboolean(self.module, self.config)
 
 
 if __name__ == '__main__':
     DEFAULT_DB_ADDRESS = r'D:\Programs\Programs\Working\Special-Cool-Collection\test\\'
-    test_1 = _ConfigDB("main.db", 'test1')
-    test_1.config = 'one'
-    test_1.value_updata()
-    test_1.db_close()
+    DEFAULT_INI_ADDRESS = r'D:\Programs\Programs\Working\Special-Cool-Collection\test\\'
+    test_2 = _ConfigINI('test.ini')
+    test_2.module = 'test1'
+    test_2.sections_create()
