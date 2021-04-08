@@ -71,9 +71,3 @@ class ConfigDBGetError(Exception):
     """DB中没有该配置名称"""
     def __str__(self):
         return Local.GetTranslation('SCC_Configuration', 'ConfigDBGetError').translation
-
-
-class ConfigINISectionsError(Exception):
-    """DB中没有该配置名称"""
-    def __str__(self):
-        return Local.GetTranslation('SCC_Configuration', 'ConfigINISectionsError').translation

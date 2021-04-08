@@ -76,8 +76,8 @@ class _ConfigDB:
         return tuple(config_name_list)
 
     def changeable_name_tup(self):
-        changeable_name = SCC_Database.SQLColumnMethod(self._con, self.module, where_user="changeable = ?").\
-            column_select(column_tup=("config", ), where_tup=(1, ))
+        changeable_name = SCC_Database.SQLColumnMethod(self._con, self.module, where_user="changeable = ?"). \
+            column_select(column_tup=("config",), where_tup=(1,))
         if not changeable_name:
             changeable_name_tup = ()
         else:
@@ -165,23 +165,50 @@ class _ConfigDB:
         return
 
 
-class _ConfigINI: # TODO(短期) 需要解决自带模块的缺点
-    def __init__(self, ini_name: str, module_name='', config_name=''):
-        self._configparser = self._configparser_get(ini_name)
+class _ConfigINI:
+    """
+    配置模块中的ini文件管理部分，不包括ini注释管理部分
+
+    *类参数* \n
+    **module_name='' (str)** 调用模块名称， 这将作为节名，等效于表名 \n
+    **config_name='' (str)** 配置名称
+
+    *类属性* \n
+    **module (str)** 同上 \n
+    **config (str)** 同上
+
+    *类方法* \n
+    **configparser_read_file(ini_name: str)** 从指定名称文件中读取原有配置 \n
+    **sections_name_tup (tup)** 返回所有节名元组 \n
+    **config_name_tup (tup)** 返回指定节名的所有键值， 注意：其中也包括所有的注释 \n
+    **sections_create** 创建节 \n
+    **sections_del** 删除节 \n
+    **config_create(value: str)** 创建包含指定数值的键 \n
+    **config_updata(value: str)** 更新包含指定数值的键， 此方法与**config_create**等效 \n
+    **config_del** 删除键 \n
+    **config_get (str)** 返回键的数值 \n
+    **config_getint (int)** 返回键转发为整数的数值 \n
+    **config_getfloat (float)** 返回键转发为浮点数的数值 \n
+    **config_getbool (bool)** 返回键转发为布尔指的数值 \n
+    **ini_write(ini_name: str)** 将所有的更改写入指定文件，注意：此方法为覆写式写入
+    """
+    def __init__(self, module_name='', config_name=''):
+        self._configparser = self._configparser_get()
         self.module = module_name
         self.config = config_name
 
     @staticmethod
-    def _configparser_get(ini_name: str):
+    def _configparser_get():
         """
-        用于返回读取ini文件的ConfigParser类
-
-        :param ini_name: 文件名称
-        :return: ConfigParser类
+        :return: 返回经过处理的ConfigParser类，其值不可以包含多行，并且键值大小写敏感
         """
-        configparser_get = configparser.ConfigParser()
-        configparser_get.read_file(open(DEFAULT_INI_ADDRESS + ini_name, mode='r+', encoding='utf8'))
+        configparser_get = configparser.ConfigParser(empty_lines_in_values=False)
+        configparser_get.optionxform = lambda option: option
         return configparser_get
+
+    def configparser_read_file(self, ini_name: str):
+        self._configparser.read_file(open(DEFAULT_INI_ADDRESS + ini_name, encoding='utf8'))
+        return
 
     def sections_name_tup(self):
         return tuple(self._configparser.sections())
@@ -221,10 +248,17 @@ class _ConfigINI: # TODO(短期) 需要解决自带模块的缺点
     def config_getbool(self):
         return self._configparser.getboolean(self.module, self.config)
 
+    def ini_write(self, ini_name: str):
+        self._configparser.write(open(DEFAULT_INI_ADDRESS + ini_name, mode='w+', encoding='utf8'))
+        return
+
 
 if __name__ == '__main__':
-    DEFAULT_DB_ADDRESS = r'D:\Programs\Programs\Working\Special-Cool-Collection\test\\'
     DEFAULT_INI_ADDRESS = r'D:\Programs\Programs\Working\Special-Cool-Collection\test\\'
-    test_2 = _ConfigINI('test.ini')
-    test_2.module = 'test1'
-    test_2.sections_create()
+    test_2 = _ConfigINI(module_name='Test1', config_name='one')
+    test_2.configparser_read_file('test.ini')
+    test_2.module = 'Jtest'
+    test_2.config = 'one'
+    test_3 = test_2.config_get()
+    print(test_3)
+    test_2.ini_write('test.ini')
