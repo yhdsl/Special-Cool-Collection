@@ -4,6 +4,7 @@
 """
 
 import configparser
+import re
 import SCC_Database
 import SCC_Exception
 
@@ -13,7 +14,7 @@ DEFAULT_DB_ADDRESS = r'Configuration\\DataBase\\'
 DEFAULT_TABLE_RULE = "config TEXT NOT NULL UNIQUE," \
                      "value TEXT NOT NULL," \
                      "changeable INTEGER DEFAULT 0," \
-                     "note TEXT DEFAULT ''," \
+                     "comment TEXT DEFAULT ''," \
                      "type TEXT DEFAULT 'str'"
 # 配置允许的类型
 DEFAULE_TYPE_TUP = ('str', 'int', 'float', 'bool')
@@ -45,10 +46,10 @@ class _ConfigDB:
     **table_del** 删除以模块命名的表\n
     **table_name_tup** 返回所有模块元组 \n
     **config_name_tup (tup)** 返回该模块的所有配置名称\n
-    **value_create(value: str, changeable=0, note='', db_type='')** 添加配置\n
+    **value_create(value: str, changeable=0, comment='', db_type='')** 添加配置\n
     **value_del()** 删除配置\n
     **value_get()** 获取配置\n
-    **value_updata(value='', changeable=-1, note='', db_type='')** 更新配置\n
+    **value_updata(value='', changeable=-1, comment='', db_type='')** 更新配置\n
     **db_close()** 提交所有的修改\n
     """
 
@@ -87,7 +88,7 @@ class _ConfigDB:
             changeable_name_tup = tuple(changeable_name_list)
         return changeable_name_tup
 
-    def value_create(self, value: str, changeable=0, note='', db_type='str'):
+    def value_create(self, value: str, changeable=0, comment='', db_type='str'):
         if changeable <= 0:
             changeable = 0
         else:
@@ -96,7 +97,7 @@ class _ConfigDB:
             db_type = 'str'
         if self.config not in self.config_name_tup():
             SCC_Database.SQLColumnMethod(self._con, self.module).column_insert((
-                "config", "value", "changeable", "note", "type"), (self.config, value, changeable, note, db_type))
+                "config", "value", "changeable", "comment", "type"), (self.config, value, changeable, comment, db_type))
         else:
             raise SCC_Exception.ConfigDBAddError
         return
@@ -114,7 +115,7 @@ class _ConfigDB:
             raise SCC_Exception.ConfigDBGetError
         else:
             value_get = SCC_Database.SQLColumnMethod(self._con, self.module, where_user="config IS ?"). \
-                column_select(("config", "value", "changeable", "note", "type"), fetch_number=1,
+                column_select(("config", "value", "changeable", "comment", "type"), fetch_number=1,
                               where_tup=(self.config,))[0]
             value_get = list(value_get)
             value_get_str = value_get[1]
@@ -136,18 +137,18 @@ class _ConfigDB:
             value_get[1] = value_return
         return tuple(value_get)
 
-    def value_updata(self, value='', changeable=-1, note='', db_type=''):
-        config_list = ["value", "changeable", "note", "type"]
-        value_list = [value, changeable, note, db_type]
+    def value_updata(self, value='', changeable=-1, comment='', db_type=''):
+        config_list = ["value", "changeable", "comment", "type"]
+        value_list = [value, changeable, comment, db_type]
         if value == '':
             config_list.remove("value")
             value_list.remove(value)
         if changeable == -1:
             config_list.remove("changeable")
             value_list.remove(changeable)
-        if note == '':
-            config_list.remove("note")
-            value_list.remove(note)
+        if comment == '':
+            config_list.remove("comment")
+            value_list.remove(comment)
         if db_type == '':
             config_list.remove("type")
             value_list.remove(db_type)
@@ -192,6 +193,7 @@ class _ConfigINI:
     **config_getbool (bool)** 返回键转发为布尔指的数值 \n
     **ini_write(ini_name: str)** 将所有的更改写入指定文件，注意：此方法为覆写式写入
     """
+
     def __init__(self, module_name='', config_name=''):
         self._configparser = self._configparser_get()
         self.module = module_name
@@ -250,6 +252,55 @@ class _ConfigINI:
 
     def ini_write(self, ini_name: str):
         self._configparser.write(open(DEFAULT_INI_ADDRESS + ini_name, mode='w+', encoding='utf8'))
+        return
+
+
+class _ConfigINIComment:
+    def __init__(self, ini_name: str):
+        self.CommentTagTup = (';', '#')
+        self._file = self._ini_read()
+        self._ini_name = ini_name
+
+    def _ini_read(self):
+        return open(DEFAULT_INI_ADDRESS + self._ini_name, encoding='utf8').readlines()
+
+    def _file_updata(self, file):
+        self._file = file
+        return
+
+    def comment_title_updata(self, comment_tup: tuple):
+        first_sections = 0
+        for file in self._file:
+            if re.search(r'\[.+]', file):
+                first_sections = self._file.index(file)
+                break
+        comment_addin_list = []
+        for i in comment_tup:
+            comment_addin_list.append(self.CommentTagTup[0] + i + '\n')
+        if first_sections == 0:
+            self._file_updata(self._file)
+        else:
+            self._file_updata(comment_addin_list + self._file[first_sections:])
+        return
+
+    def comment_sections_updata(self, module_name: str, config_name: str, comment_tup: tuple):
+        config_obj = _ConfigINI(module_name=module_name)
+        config_obj.configparser_read_file(self._ini_name)
+        config_tup = config_obj.config_name_tup()
+        module_sign = self._file.index(f'[{module_name}]\n')
+        if config_tup[0] == config_name:
+            start_sign = module_sign
+        else:
+            start_sign = self._file.index(config_tup[config_tup.index(config_name) - 1])
+        end_sign = module_sign + self._file[module_sign:].index(config_name)
+        comment_addin_list = []
+        for i in comment_tup:
+            comment_addin_list.append(self.CommentTagTup[1] + i + '\n')
+        self._file_updata(self._file[:start_sign + 1] + comment_addin_list + self._file[end_sign:])
+        return
+
+    def file_write(self):
+        open(DEFAULT_INI_ADDRESS + self._ini_name, mode='w+', encoding='utf8').write(''.join(self._file))
         return
 
 
