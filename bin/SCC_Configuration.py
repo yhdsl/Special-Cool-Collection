@@ -256,15 +256,35 @@ class _ConfigINI:
 
 
 class _ConfigINIComment:
+    """
+    *类参数* \n
+    **ini_name (str)** ini文件名称
+
+    *类属性* \n
+    **ini_name (str)** ini文件名称 \n
+    **CommentTag (tup)** 注释标识
+
+    *类方法* \n
+    **comment_title_updata(comment_tup: tuple)** 在INI文件的开头加上指定的注释内容 \n
+    **comment_sections_updata(module_name: str, config_name: str, comment_tup: tuple)** 在指定的节的键前加上指定的注释内容 \n
+    **file_write** 将修改后的结果覆写入指定文件
+    """
+
     def __init__(self, ini_name: str):
-        self.CommentTagTup = (';', '#')
+        self.ini_name = ini_name
+        self.CommentTag = ('; ', '# ')
         self._file = self._ini_read()
-        self._ini_name = ini_name
 
     def _ini_read(self):
-        return open(DEFAULT_INI_ADDRESS + self._ini_name, encoding='utf8').readlines()
+        """
+        :return: 指定文件的内容列表
+        """
+        return open(DEFAULT_INI_ADDRESS + self.ini_name, encoding='utf8').readlines()
 
     def _file_updata(self, file):
+        """
+        将私有属性_file的内容更新为传入的file
+        """
         self._file = file
         return
 
@@ -276,40 +296,54 @@ class _ConfigINIComment:
                 break
         comment_addin_list = []
         for i in comment_tup:
-            comment_addin_list.append(self.CommentTagTup[0] + i + '\n')
-        if first_sections == 0:
-            self._file_updata(self._file)
-        else:
-            self._file_updata(comment_addin_list + self._file[first_sections:])
+            comment_addin_list.append(self.CommentTag[0] + i + '\n')
+        comment_addin_list.append('\n')
+        self._file_updata(comment_addin_list + self._file[first_sections:])
         return
+
+    def _file_index_get(self, module_sign: int, config_name: str):
+        """
+        返回指定config在文件列表中的索引值
+
+        :param module_sign: module索引值
+        :param config_name: 配置名称
+        :return: config在文件列表中的索引值
+        """
+        config_sign = 0
+        for n in self._file[module_sign:]:
+            if re.fullmatch(rf'{config_name} = .+\n', n):
+                config_sign = self._file.index(n)
+                break
+        return config_sign
 
     def comment_sections_updata(self, module_name: str, config_name: str, comment_tup: tuple):
         config_obj = _ConfigINI(module_name=module_name)
-        config_obj.configparser_read_file(self._ini_name)
+        config_obj.configparser_read_file(self.ini_name)
         config_tup = config_obj.config_name_tup()
         module_sign = self._file.index(f'[{module_name}]\n')
         if config_tup[0] == config_name:
             start_sign = module_sign
         else:
-            start_sign = self._file.index(config_tup[config_tup.index(config_name) - 1])
-        end_sign = module_sign + self._file[module_sign:].index(config_name)
+            start_sign = self._file_index_get(module_sign, config_tup[config_tup.index(config_name) - 1])
+        end_sign = self._file_index_get(module_sign, config_name)
         comment_addin_list = []
         for i in comment_tup:
-            comment_addin_list.append(self.CommentTagTup[1] + i + '\n')
+            comment_addin_list.append(self.CommentTag[1] + i + '\n')
         self._file_updata(self._file[:start_sign + 1] + comment_addin_list + self._file[end_sign:])
         return
 
     def file_write(self):
-        open(DEFAULT_INI_ADDRESS + self._ini_name, mode='w+', encoding='utf8').write(''.join(self._file))
+        open(DEFAULT_INI_ADDRESS + self.ini_name, mode='w', encoding='utf8').write(''.join(self._file))
         return
+
+
+class Config:
+    pass
 
 
 if __name__ == '__main__':
     DEFAULT_INI_ADDRESS = r'D:\Programs\Programs\Working\Special-Cool-Collection\test\\'
-    test_2 = _ConfigINI(module_name='Test1', config_name='one')
-    test_2.configparser_read_file('test.ini')
-    test_2.module = 'Jtest'
-    test_2.config = 'one'
-    test_3 = test_2.config_get()
-    print(test_3)
-    test_2.ini_write('test.ini')
+    test_1 = _ConfigINIComment('test.ini')
+    test_1.comment_sections_updata('test1', 'one', ('true', 'just1 *'))
+    # print(test_1.test())
+    test_1.file_write()
