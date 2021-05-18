@@ -1,6 +1,8 @@
 """
-**模块说明** 软件的底层数据库模块，已提供基本的数据检验 \n
-**模块状态** 测试中
+**模块说明** \n
+软件的底层数据库模块，已提供基本的数据检验 \n
+**模块状态** \n
+DEBUG
 """
 
 import os
@@ -8,17 +10,18 @@ import sqlite3
 import SCC_Exception
 
 
-class SQLDBGetStart:
+class SQLGetStart:
     """
     返回指定数据库的connect对象或创建一个新的数据库 \n
-    该类提供了一个安全获取con对象的方法，以下所有类中均需要提供该方法返回的con对象
+    该类提供了一个安全获取connect对象的方法，以下所有类中均需要提供该方法返回的connect对象 \n
+    下文connect对象简称con类
 
     *类参数* \n
-    **db_adress (str)** 指定的数据库地址
-    **create_db=False (bool)** 设置为True以便于创建一个新的空数据库，**若原数据库存在将被删除**
+    **db_adress: str** 指定的数据库地址
+    **create_db=False: bool** 设置为True以便于创建一个新的空数据库，**若原数据库存在则将被删除**
 
     *类属性* \n
-    **.con (sqlite3.connect)** 返回指定数据库的connect对象
+    **con: sqlite3.connect** 返回指定数据库的connect对象
 
     *类异常* \n
     **SCC_Exception.DBNotExistError** 数据库不存在
@@ -38,7 +41,7 @@ class SQLDBGetStart:
         """
         if create_db:
             if os.path.exists(db_adress):
-                os.remove(db_adress)
+                os.remove(db_adress)  # 此处可能因为文件被占用而抛出异常
         else:
             if not os.path.exists(db_adress):
                 raise SCC_Exception.DBNotExistError
@@ -48,14 +51,14 @@ class SQLDBGetStart:
 class SQLDBUsefulMethod:
     """
     实现con类部分常用的方法 \n
-    **注意在做出改变后调用该类的con_safe_close方法**
+    **注意在其他类做出改变后调用该类的con_safe_close方法，以防更改丢失**
 
     *类属性* \n
-    **db_con (sqlite3.connect)** 数据库的con类
+    **db_con: sqlite3.connect** 数据库的con类
 
     *类方法* \n
-    **con_safe_close** con安全退出，现在如果con未作出改变则不会调用commit \n
-    **con_get_cur (sqlite3.cursor)** 获取cur类，更推荐直接使用con的cur方法
+    **con_safe_close()** con类的安全退出方法，现在如果con类未作出改变则不会提交 \n
+    **con_get_cur() (sqlite3.cursor)** 获取cur类，更推荐直接使用con类的cursor方法
     """
 
     def __init__(self, db_con):
@@ -71,26 +74,26 @@ class SQLDBUsefulMethod:
         return self._con.cursor()
 
     def _con_rollback(self):  # TODO(长期) 实现回滚操作
-        """回滚操作，目前回滚无法实现"""
+        """回滚操作"""
         self._con.rollback()
         return
 
-    def db_backup(self):  # TODO(长期) 实现数据库备份功能
+    def _db_backup(self):  # TODO(长期) 实现数据库备份功能
         """数据库备份"""
         pass
 
 
 class SQLTableMethod:
     """
-    实现表的新建和删除，以及提供表名元组
+    实现表(TABLE)的新建和删除，以及提供表名元组等常用功能
 
     *类属性* \n
-    **db_con (sqlite3.connect)** 数据库的con类
+    **db_con: sqlite3.connect** 数据库的con类
 
     *类方法* \n
     **table_create(table_name: str, table_rules: str)** 创建指定规则的表 \n
     **table_drop(table_name: str)** 删除指定的表 \n
-    **table_tup (tup)** 返回指定数据库中所有的表名元组
+    **table_tup() (tup)** 返回指定数据库中所有的表名元组
     """
 
     def __init__(self, db_con):
@@ -98,14 +101,12 @@ class SQLTableMethod:
 
     def _table_exist_check(self, table_name: str, table_list_return=False):
         """
-        表名检查
-
         :param table_name: 表名
         :param table_list_return: 设置为True以允许返回表名列表
         :return: Bool或表名列表
         """
-        cur = SQLDBUsefulMethod(self._con).con_get_cur()
-        cur.execute("SELECT tbl_name FROM sqlite_master WHERE type = 'table'")
+        cur = self._con.cursor()
+        cur.execute("SELECT tbl_name FROM sqlite_master WHERE type = ?", ('table', ))
         table_list_unclear = cur.fetchall()
         table_list = []
         for i in table_list_unclear:
@@ -270,13 +271,4 @@ class _SQLWhereMethod:  # TODO(中期) 确定WHERE语句的规则
 
 
 if __name__ == '__main__':
-    test_address = r"D:\Programs\Programs\Working\Special-Cool-Collection\test\test.db"
-    test_1 = SQLDBGetStart(test_address, create_db=False).con
-    test_2 = SQLDBUsefulMethod(test_1)
-    test_3 = SQLTableMethod(test_1)
-    test_4 = SQLColumnMethod(test_1, 'test1')
-    # test_4.column_insert(('name1', 'name2'), ('a', ))
-    # test_4.column_delete()
-    # test_4.column_update(('name1', 'name2'), ('2', ))
-    print(test_4.column_select(('name1', 'name2'), 1))
-    test_2.con_safe_close()
+    pass

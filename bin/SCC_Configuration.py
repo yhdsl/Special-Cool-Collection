@@ -54,7 +54,7 @@ class _ConfigDB:
     """
 
     def __init__(self, db_name: str, module_name='', config_name='', create_db=False):
-        self._con = SCC_Database.SQLDBGetStart(DEFAULT_DB_ADDRESS + db_name, create_db=create_db).con
+        self._con = SCC_Database.SQLGetStart(DEFAULT_DB_ADDRESS + db_name, create_db=create_db).con
         self.module = module_name
         self.config = config_name
 

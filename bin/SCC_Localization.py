@@ -1,6 +1,6 @@
 """
 **模块说明** \n
-软件的本地化模块，负责返回指定语言的输出内容，但不包括PYQT部分 \n
+软件的本地化模块，负责返回指定语言的输出内容，但不包括GUI部分 \n
 **模块状态** \n
 DEBUG
 """
@@ -90,7 +90,7 @@ class GetTranslation:
         return get_translation
 
 
-class GetStart:  # TODO(中期) 统一自检模块的组成
+class _GetStart:  # TODO(中期) 统一自检模块的组成
     pass
 
 
