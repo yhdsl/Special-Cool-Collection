@@ -18,6 +18,8 @@ DEFAULT_FILE_NAME = 'f"SCC_Logs{logs_int}"'
 LOGS_FILE_FIRST_LINE = r'f"本日志于{logs_time}开始记录，记录等级为{logs_level}\n"'
 # 日志的时间格式
 LOGS_TIME_FORMAT = r'%Y/%m/%d %I:%M:%S %p'
+# 日志的内容格式
+LOGS_FORMATTER_FORMAT = '[%(asctime)s] 等级%(levelname)s 模块%(name)s: %(message)s'
 # 日志等级
 LOGS_LEVEL_DIR = {logging.CRITICAL: 'CRITICAL',
                   logging.ERROR: 'ERROR',
@@ -30,7 +32,7 @@ DEFAULT_LOG_LEVEL = logging.INFO
 
 
 class Logs:
-    def __init__(self):
+    def __init__(self, logs_level=DEFAULT_LOG_LEVEL, run_first=False):
         pass
 
     @staticmethod
@@ -91,6 +93,35 @@ class Logs:
         file_open.close()
         return
 
+    @staticmethod
+    def _get_handler(file_address: str):
+        """
+
+        :param file_address: 日志文件地址
+        :return: 处理器
+        """
+        return logging.FileHandler(file_address, mode='a+', encoding='utf8')
+
+    @staticmethod
+    def _get_formatter():
+        """
+
+        :return: 格式器
+        """
+        return logging.Formatter(LOGS_FORMATTER_FORMAT, LOGS_TIME_FORMAT)
+
+    def get_log(self, model_name: str, file_address: str, logs_level=DEFAULT_LOG_LEVEL):
+        logger = logging.getLogger(model_name)
+        logger.setLevel(logs_level)
+        logger_formatter = self._get_formatter()
+        logger_handler = self._get_handler(file_address=file_address)
+        logger_handler.setFormatter(logger_formatter)
+        logger.addHandler(logger_handler)
+        return logger
+
 
 if __name__ == '__main__':
-    obj_test1 = Logs()
+    test1 = Logs()
+    address = r'D:\Programs\Programs\Working\Special-Cool-Collection\bin\Logs\SCC_Logs0.txt'
+    log = test1.get_log('test_model', address)
+    log.error('error test%s', stack_info=True)

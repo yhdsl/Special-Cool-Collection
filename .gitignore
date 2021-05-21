@@ -1,5 +1,5 @@
 .idea
 Help
 test
-bin/Log
 bin/__pycache__
+bin/Logs
