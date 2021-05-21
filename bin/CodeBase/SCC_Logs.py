@@ -1,7 +1,8 @@
 """
-**模块说明** 软件的日志记录模块
-
-**模块状态** DEBUG
+**模块说明** \n
+软件的日志记录模块 \n
+**模块状态** \n
+DEBUG
 """
 
 import logging
@@ -53,17 +54,18 @@ class Logs:
 
     *类参数* \n
     **module_name=__name__ (str)** 包名 \n
-    **run_first=False (bool)** 是否新建一个日志文件 \n
+    **first_run=False (bool)** 是否新建一个日志文件 \n
 
     *类属性* \n
     **logger (logging.Logger)** 日志记录器 \n
     """
 
-    def __init__(self, module_name=__name__, run_first=False):
-        if run_first:
+    def __init__(self, module_name=__name__, first_run=False):
+        if first_run:
             self._make_new_file()
-        self.logger = self._get_log(module_name=module_name,
-                                    file_address=rf'{DEFAULT_TRUE_ADDRESS}\{self._get_file_name()}.txt')
+        else:
+            self.logger = self._get_log(module_name=module_name,
+                                        file_address=rf'{DEFAULT_TRUE_ADDRESS}\{self._get_file_name()}.txt')
 
     @staticmethod
     def _get_file_name(get_int=False):
