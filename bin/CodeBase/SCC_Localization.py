@@ -1,26 +1,27 @@
 """
 **模块说明** \n
 软件的本地化模块，负责返回指定语言的输出内容，但不包括GUI部分 \n
+已在__init__文件中提供便捷方法 \n
 **模块状态** \n
 DEBUG
 """
 
 import configparser
-import os.path
+import os
 
 # 默认选择的语言
 DEFAULT_LANGUAGE = 'zh-CN'
 # 默认语言配置文件的存储地址
-DEFAULT_Config_Address = r'Configuration\Main.ini'
+DEFAULT_Config_Address = os.path.dirname(os.getcwd()) + r"\Config\CodeBase\Main.ini"
 # 本模块的名称，用于在配置文件中搜索自定义的语言
 DEFAULT_Module = 'SCC_Localization'
 # 翻译失败时返回的默认值
-DEFAULT_Translation = "f'在默认文件的{module}里找不到{translation}对应的翻译'"
+DEFAULT_Translation = 'NULL'
 
 
 class GetTranslation:
     """
-    获取指定内容的翻译，该类在设计上考虑到最大的稳定性和兼容性，初始化前需额外调用GetStart类进行检查
+    获取指定内容的翻译
 
     *类参数* \n
     **module_name: str** 调用此类的模块名，这将作为节名传入 \n
@@ -32,7 +33,7 @@ class GetTranslation:
 
     def __init__(self, module_name: str, translation_name: str):
         self._lang = self._get_language()
-        self._localization = f'Localization/{self._lang}.ini'
+        self._localization = os.path.dirname(os.getcwd()) + rf"\Localization\{self._lang}.ini"
         self.translation = self._get_translation(module_name, translation_name)
 
     def _translation_exists(self, ini_address: str, module_name: str, config_name: str):
@@ -88,10 +89,6 @@ class GetTranslation:
         else:
             get_translation = eval(DEFAULT_Translation, {"module": module_name, "translation": translation_name})
         return get_translation
-
-
-class _GetStart:  # TODO(中期) 统一自检模块的组成
-    pass
 
 
 if __name__ == '__main__':

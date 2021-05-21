@@ -6,5 +6,3 @@ Special-Cool-Collection是一个设计用来管理句子，音乐和视频的项
 本项目采用MIT协议授权，您可以自由的修改，分发或销售，但必须在适当的位置保留原作者的署名
 本项目的源代码仓库 https://github.com/yhdsl/Special-Cool-Collection，欢迎前来提供PR
 """
-
-version = ('0.1.0', 'pro-alpha', '')
