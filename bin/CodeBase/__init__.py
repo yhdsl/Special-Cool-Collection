@@ -1,25 +1,33 @@
+# CodeBase初始化进程
+# 本模块实现自定义配置的自动载入
+# 启动模块负责实现
+# 1.启动该初始化进程
+# 2.向Log模块传入程序版本号
+# 3.生成新的日志文件
+# 4.复检配置的可用性，并写入日志
+
 import configparser
 import os
 from . import SCC_Localization as Lang
 from . import SCC_Logs as Logs
 
 # 配置文件地址
-CODEBASE_CONGIG_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r"\Config\CodeBase\Main.ini"
-SOFTWARE_VERSION = ''  # 创建日志文件时需要先给出版本号，该值一般来说没有用处
+__CODEBASE_CONGIG_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r"\Config\CodeBase\Main.ini"
+# 以下为各模块名称
 __CODEBASE_SCC_LOGS = 'SCC_Logs'
 __CODEBASE_SCC_Localization = 'SCC_Localization'
 
 
-def __config_start(config_address: str, config_sections: str, config_name: str):
+def _config_check(config_address: str, config_sections: str, config_name: str):
     """
-    私有函数，用于可靠的从配置文件中读取自定义配置
-    该函数仅应当在初始化时被调用，其旨在保证最大稳定性
-    其他配置需求应调用该包中的配置模块来实现
+    用于从配置文件中读取自定义配置
+    该函数仅应当在初始化和启动模块自检时被调用，其旨在保证最大的稳定性
+    其他配置需求应调用CodeBase包中的配置模块来实现
 
     :param config_address: 配置文件地址
     :param config_sections: 配置的节名
-    :param config_name: 配置的键
-    :return: 返回一个列表，其第一个元素为布尔值，第二个元素为读取的配置值，不会进行类型转换
+    :param config_name: 配置的键值
+    :return: 返回一个列表，其第一个元素为布尔值，表面配置是否存在；第二个元素为读取的配置值，并且不会进行类型转换，默认为 ''
     """
     config_get = [False, '']
     configparser_get = configparser.ConfigParser(empty_lines_in_values=False)
@@ -32,21 +40,20 @@ def __config_start(config_address: str, config_sections: str, config_name: str):
     return config_get
 
 
-# SCC_Localization模块配置初始化
-if not os.path.exists(Lang.DEFAULT_TRUE_ADDRESS):  # 确保Localization文件夹存在
-    os.mkdir(Lang.DEFAULT_TRUE_ADDRESS)
-if __config_start(CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_Localization, 'TRANSLATION_LANGUAGE')[0]:
-    Logs.LOG_LEVEL = __config_start(CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_Localization, 'TRANSLATION_LANGUAGE')[1]
+# SCC_Localization模块 配置初始化
+if not os.path.exists(Lang.DEFAULT_TRUE_ADDRESS):
+    os.mkdir(Lang.DEFAULT_TRUE_ADDRESS)  # 确保Localization文件夹存在
+if _config_check(__CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_Localization, 'TRANSLATION_LANGUAGE')[0]:
+    Logs.LOG_LEVEL = _config_check(__CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_Localization, 'TRANSLATION_LANGUAGE')[1]
 
-# SCC_Logs模块配置初始化
-if not os.path.exists(Logs.DEFAULT_TRUE_ADDRESS):  # 确保Logs文件夹存在
-    os.mkdir(Logs.DEFAULT_TRUE_ADDRESS)
-if __config_start(CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_LOGS, 'MAX_LOGS_FILES')[0]:
-    Logs.MAX_LOGS_FILES = int(__config_start(CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_LOGS, 'MAX_LOGS_FILES')[1])
-if __config_start(CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_LOGS, 'LOG_LEVEL_STR')[0]:
-    Logs.LOG_LEVEL = Logs.LOGS_LEVEL_DIR[__config_start(CODEBASE_CONGIG_ADDRESS,
-                                                        __CODEBASE_SCC_LOGS, 'LOG_LEVEL_STR')[1]]
-Logs.SOFTWARE_VERSION = SOFTWARE_VERSION
+# SCC_Logs模块 配置初始化
+if not os.path.exists(Logs.DEFAULT_TRUE_ADDRESS):
+    os.mkdir(Logs.DEFAULT_TRUE_ADDRESS)  # 确保Logs文件夹存在
+if _config_check(__CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_LOGS, 'MAX_LOGS_FILES')[0]:
+    Logs.MAX_LOGS_FILES = int(_config_check(__CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_LOGS, 'MAX_LOGS_FILES')[1])
+if _config_check(__CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_LOGS, 'LOG_LEVEL_STR')[0]:
+    Logs.LOG_LEVEL = Logs.LOGS_LEVEL_DIR[_config_check(__CODEBASE_CONGIG_ADDRESS,
+                                                       __CODEBASE_SCC_LOGS, 'LOG_LEVEL_STR')[1]]
 
 if __name__ == '__main__':
     pass

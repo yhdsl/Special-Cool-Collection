@@ -9,47 +9,35 @@ import logging
 import os
 import time
 
-
-def _get_true_address(flie_name: str):
-    """
-    返回Logs文件夹的绝对地址
-
-    :param flie_name: Logs文件夹名称
-    :return: Logs文件夹的绝对地址
-    """
-    module_address = str(__file__).rsplit('\\', maxsplit=1)[0]  # 保证Logs文件夹与CodeBase文件夹同级
-    return os.path.dirname(module_address) + "\\" + flie_name
-
-
-# 默认日志文件夹的名称
-_DEFAULT_ADDRESS_NAME = r'Logs'
 # 日志文件存储的绝对地址
-DEFAULT_TRUE_ADDRESS = _get_true_address(_DEFAULT_ADDRESS_NAME)
+DEFAULT_TRUE_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r'\Logs'
 # 最大日志文件数量，注意文件是从0开始计数的，默认为5，该值由配置文件优先提供
 MAX_LOGS_FILES = 5
 # 不带后缀名的日志文件名，注意该项更该后本模块可能无法正常工作
 _DEFAULT_FILE_NAME = 'f"SCC_Logs{logs_int}"'
-# 程序版本号，由__init__文件初始化时修改
+# 程序版本号，由启动模块赋值
 SOFTWARE_VERSION = ''
 # 日志初始化时的首行内容
-_LOGS_FILE_FIRST_LINE = r'f"开始记录日志  当前时间{logs_time}  记录等级{logs_level}  SCC版本号v{logs_version}\n"'
+_LOGS_FILE_FIRST_LINE = r'f"开始记录日志  当前时间{logs_time}  记录等级{logs_level}  SCC版本号 v{logs_version}\n"'
 # 日志的时间格式
 _LOGS_TIME_FORMAT = '%Y/%m/%d %I:%M:%S %p'
 # 日志的内容格式
 _LOGS_FORMATTER_FORMAT = r'[%(asctime)s] %(levelname)s %(name)s\%(module)s.%(funcName)s.%(lineno)d: %(message)s'
-# 日志等级对应的字典，包含两种样式
+# 日志等级对应的字典，保证双向读取，其中OFF为关闭日志等级
 LOGS_LEVEL_DIR = {logging.CRITICAL: 'CRITICAL',
                   logging.ERROR: 'ERROR',
                   logging.WARNING: 'WARNING',
                   logging.INFO: 'INFO',
                   logging.DEBUG: 'DEBUG',
                   logging.NOTSET: 'NOTSET',
+                  100: 'OFF',
                   'CRITICAL': logging.CRITICAL,
                   'ERROR': logging.ERROR,
                   'WARNING': logging.WARNING,
                   'INFO': logging.INFO,
                   'DEBUG': logging.DEBUG,
-                  'NOTSET': logging.NOTSET}
+                  'NOTSET': logging.NOTSET,
+                  'OFF': 100}
 # 日志等级，默认为INFO，该值由配置文件优先提供
 LOG_LEVEL_INT = logging.INFO
 
@@ -57,14 +45,14 @@ LOG_LEVEL_INT = logging.INFO
 class Logs:
     """
     实现日志记录的相关功能
-    其中first_run参数仅由入口模块和调试模块使用，用于建立一个新的日志文件
+    其中first_run参数仅由启动模块和调试时使用，用于建立一个新的日志文件
 
     *类参数* \n
-    **module_name=__name__ (str)** 包名 \n
-    **first_run=False (bool)** 是否新建一个日志文件 \n
+    **module_name=__name__: str** 包名 \n
+    **first_run=False: bool** 是否新建一个日志文件 \n
 
     *类属性* \n
-    **logger (logging.Logger)** 日志记录器 \n
+    **logger: logging.Logger** 日志记录器 \n
     """
 
     def __init__(self, module_name=__name__, first_run=False):

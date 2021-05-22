@@ -11,10 +11,8 @@ from . import SCC_Logs
 
 # 文本显示的语言，默认为简体中文(zh-CN)，该值由配置文件优先提供
 TRANSLATION_LANGUAGE = 'zh-CN'
-# 默认存储翻译文件的文件夹名称
-_DEFAULT_ADDRESS_NAME = r'Localization'
-# 默认存储翻译文件的文件夹
-DEFAULT_TRUE_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + '\\' + _DEFAULT_ADDRESS_NAME
+# 默认翻译文件夹的地址
+DEFAULT_TRUE_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r'\Localization'
 # 翻译失败时返回的默认值
 _DEFAULT_Translation_STR = 'NULL'
 
@@ -25,11 +23,11 @@ class GetTranslation:
     保证无论如何均会返回一个值
 
     *类参数* \n
-    **module_name: (str)** 调用此类的模块名，这将作为节名传入 \n
-    **translation_name: (str)** 待翻译的内容
+    **module_name: str** 调用此类的模块名，这将作为节名传入 \n
+    **translation_name: str** 待翻译的内容
 
     *类属性* \n
-    **translation() (str)** 返回已翻译的文本
+    **translation() -> str** 返回已翻译的文本
     """
 
     def __init__(self, module_name: str, translation_name: str):
@@ -75,13 +73,13 @@ class GetTranslation:
         """
         if self._translation_exists(self._localization, module_name, translation_name):
             get_translation = self._get_configparser(self._localization).get(module_name, translation_name)
-            SCC_Logs.Logs(module_name=__name__).logger.debug(f'已从 {module_name} 中获取 {translation_name}'
-                                                             f' 对应的翻译 {get_translation} ')
+            SCC_Logs.Logs(module_name=__name__).logger.debug(f'已从 {module_name} 中获取 {translation_name} '
+                                                             f'对应的翻译内容 {get_translation} ')
         else:
             get_translation = _DEFAULT_Translation_STR
-            SCC_Logs.Logs(module_name=__name__).logger.warning(f'无法从位于 {self._localization}'
-                                                               f' 中的 {module_name} 中获取'
-                                                               f' {translation_name} 对应的翻译')
+            SCC_Logs.Logs(module_name=__name__).logger.warning(f'无法从位于 {self._localization} '
+                                                               f'中的 {module_name} 内获取 '
+                                                               f'{translation_name} 对应的翻译内容')
         return get_translation
 
 

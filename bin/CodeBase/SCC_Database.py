@@ -25,10 +25,7 @@ class SQLGetStart:
     **create_db=False: bool** 设置为True以便于创建一个新的空数据库，**若原数据库存在则将被删除**
 
     *类属性* \n
-    **con: sqlite3.connect** 返回指定数据库的connect对象
-
-    *类异常* \n
-    **SCC_Exception.DBNotExistError** 数据库不存在
+    **con: sqlite3.Connect** 返回指定数据库的connect对象
     """
 
     def __init__(self, db_adress: str, create_db=False):
@@ -41,15 +38,20 @@ class SQLGetStart:
 
         :param db_adress: 指定的数据库地址
         :param create_db: 设置为True以允许创建一个空的数据库
-        :return: sqlite3.connect
+        :return: sqlite3.Connect
         """
         if create_db:
             if os.path.exists(db_adress):
-                os.remove(db_adress)  # 此处可能因为文件被占用而抛出异常
-                _logger.info(f'旧数据库"{db_adress}"已被删除')
+                try:
+                    os.remove(db_adress)
+                except PermissionError:
+                    _logger.warning(f'数据库"{db_adress}"被另一个程序占用，已储存至临时数据库内')
+                    db_adress = db_adress.rsplit('.', maxsplit=1)[0] + '_temp.db'
+                else:
+                    _logger.info(f'旧数据库"{db_adress}"已被删除')
         else:
             if not os.path.exists(db_adress):
-                _logger.error(f'{db_adress}', stack_info=True)
+                _logger.error(f'db_adress={db_adress}', stack_info=True)
                 raise SCC_Exception.DBNotExistError
         _logger.debug(f'已与位于"{db_adress}"的数据库建立连接')
         return sqlite3.connect(db_adress)
@@ -61,14 +63,14 @@ class SQLDBUsefulMethod:
     **注意在其他类做出改变后调用该类的con_safe_close方法，以防更改丢失**
 
     *类属性* \n
-    **db_con: sqlite3.connect** 数据库的con类
+    **db_con: sqlite3.Connect** 数据库的con类
 
     *类方法* \n
     **con_safe_close()** con类的安全退出方法，现在如果con类未作出改变则不会提交 \n
     **con_get_cur() (sqlite3.cursor)** 获取cur类，更推荐直接使用con类的cursor方法
     """
 
-    def __init__(self, db_con):
+    def __init__(self, db_con: sqlite3.Connection):
         self._con = db_con
 
     def con_safe_close(self):
@@ -87,8 +89,8 @@ class SQLDBUsefulMethod:
         self._con.rollback()
         return
 
-    def _db_backup(self):  # TODO(长期) 实现数据库备份功能
-        """数据库备份"""
+    def _db_backup(self):  # TODO(长期) 实现数据库转移功能
+        """数据库转移"""
         pass
 
 
@@ -97,22 +99,24 @@ class SQLTableMethod:
     实现表(TABLE)的新建和删除，以及提供表名元组等常用功能
 
     *类属性* \n
-    **db_con: sqlite3.connect** 数据库的con类
+    **db_con: sqlite3.Connect** 数据库的con类
 
     *类方法* \n
-    **table_create(table_name: str, table_rules: str)** 创建指定规则的表 \n
-    **table_drop(table_name: str)** 删除指定的表 \n
-    **table_tup() (tup)** 返回指定数据库中所有的表名元组
+    **table_create(table_name: str, table_rules: str)** 创建指定名称和规则的表 \n
+    **table_drop(table_name: str)** 删除指定名称的表 \n
+    **table_tup() -> tup** 返回指定数据库中包含所有的表名的元组
     """
 
-    def __init__(self, db_con):
+    def __init__(self, db_con: sqlite3.Connection):
         self._con = db_con
 
     def _table_exist_check(self, table_name: str, table_list_return=False):
         """
+        检查表名是否存在，或返回表名列表
+
         :param table_name: 表名
         :param table_list_return: 设置为True以允许返回表名列表
-        :return: Bool或表名列表
+        :return: bool或表名列表
         """
         cur = self._con.cursor()
         cur.execute("SELECT tbl_name FROM sqlite_master WHERE type = ?", ('table', ))
@@ -131,9 +135,9 @@ class SQLTableMethod:
     def table_create(self, table_name: str, table_rules: str):
         table_check = self._table_exist_check(table_name)
         if table_check:
-            _logger.error(f'table_name={table_name} table_rules={table_rules}', stack_info=True)
+            _logger.error(f'table_name={table_name}', stack_info=True)
             raise SCC_Exception.TableCreateError
-        else:  # 未处理table_rules造成的sqlite3.OperationalError异常
+        else:  # 无法处理table_rules造成的sqlite3.OperationalError异常
             self._con.execute(f"CREATE TABLE {table_name} ({table_rules})")
             _logger.debug(f'已创建新表{table_name}，规则为{table_rules}')
         return
@@ -144,7 +148,7 @@ class SQLTableMethod:
             self._con.execute(f"DROP TABLE {table_name}")
             _logger.debug(f'已删除表{table_name}')
         else:
-            _logger.error(f'{table_name}', stack_info=True)
+            _logger.error(f'table_name={table_name}', stack_info=True)
             raise SCC_Exception.TableDropError
         return
 
@@ -157,9 +161,9 @@ class SQLColumnMethod:
     实现数据列的增加，删除，修改，搜索
 
     *类属性* \n
-    **db_con (sqlite3.connect)** 数据库的con类 \n
-    **table_name (str)** 表名 \n
-    **where_user='True' (str)** 不带where前缀的where语句，默认为所有内容
+    **db_con: sqlite3.Connect** 数据库的con类 \n
+    **table_name: str** 表名 \n
+    **where_user='True': str** 不带where前缀的where语句，默认为所有内容
 
     *类方法* \n
     数据的修改以column_tup为主，value_tup中多余的数据将被忽略 \n
@@ -167,14 +171,10 @@ class SQLColumnMethod:
     **column_insert(column_tup: tuple, value_tup: tuple)** 增加数据 \n
     **column_delete(where_tup=None)** 删除数据 \n
     **column_update(column_tup: tuple, value_tup: tuple, where_tup=None)** 更新数据 \n
-    **column_select(column_tup: tuple, fetch_number=0, where_tup=None) (list)** 返回指定数量的搜索结果，默认为全部
-
-    *类异常* \n
-    **SCC_Exception.ColunmError** 表名不存在
-    **SCC_Exception.ColunmValuesLessError** 提供的数据过少
+    **column_select(column_tup: tuple, fetch_number=0, where_tup=None) -> list** 返回指定数量的搜索结果，默认为全部
     """
 
-    def __init__(self, db_con, table_name: str, where_user='True'):
+    def __init__(self, db_con: sqlite3.Connection, table_name: str, where_user='True'):
         self._con = db_con
         self.table = table_name
         self.where = where_user
@@ -184,7 +184,7 @@ class SQLColumnMethod:
         """检查传入的表名是否存在"""
         table_tup = SQLTableMethod(self._con).table_tup()
         if self.table not in table_tup:
-            _logger.error(f'{self.table}', stack_info=True)
+            _logger.error(f'table_name={self.table}', stack_info=True)
             raise SCC_Exception.ColunmError
         return
 
@@ -196,14 +196,14 @@ class SQLColumnMethod:
         value_add = '?,' * len(column_tup)
         self._con.execute(f"INSERT INTO {self.table} ({column_add}) VALUES ({value_add[:-1]})",
                           value_tup[:len(column_tup)])
-        _logger.debug(f'已在表{self.table}中插入{column_tup}，值为{value_tup}')
+        _logger.debug(f'已在表{self.table}中插入{column_tup}，值为{value_tup[:len(column_tup)]}')
         return
 
     def column_delete(self, where_tup=None):
         if not where_tup:
             where_tup = ()
         self._con.execute(f"DELETE FROM {self.table} WHERE {self.where}", where_tup)
-        _logger.debug(f'已删除表{self.table}中的数据，规则为{self.where}，拓展元组为{where_tup}')
+        _logger.debug(f'已删除表{self.table}中的数据，过滤规则为{self.where}，补充内容为{where_tup}')
         return
 
     def column_update(self, column_tup: tuple, value_tup: tuple, where_tup=None):
@@ -218,7 +218,8 @@ class SQLColumnMethod:
         update_add = ','.join(update_add)
         self._con.execute(f"UPDATE {self.table} SET {update_add} WHERE {self.where}",
                           value_tup[:len(column_tup)] + where_tup)
-        _logger.debug(f'已在{self.table}中向{column_tup}更新为{value_tup}，规则为{self.where}，拓展元组为{where_tup}')
+        _logger.debug(f'已在{self.table}中将{column_tup}的数值更新为{value_tup[:len(column_tup)]}，'
+                      f'过滤规则为{self.where}，补充内容为为{where_tup}')
         return
 
     def column_select(self, column_tup: tuple, fetch_number=0, where_tup=None):
@@ -235,9 +236,9 @@ class SQLColumnMethod:
             return cur.fetchmany(size=fetch_number)
 
 
-class _SQLWhereMethod:  # TODO(中期) 确定WHERE语句的规则
+class __SQLWhereMethod:
     """
-    目前该方法不完善，数据需要使用占位符传入
+    该类已被废弃，where语句由其他模块按需自行生成
     """
 
     def __init__(self, where_auto=False, where_user=''):
