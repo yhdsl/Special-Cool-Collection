@@ -14,7 +14,7 @@ TRANSLATION_LANGUAGE = 'zh-CN'
 # 默认存储翻译文件的文件夹名称
 _DEFAULT_ADDRESS_NAME = r'Localization'
 # 默认存储翻译文件的文件夹
-DEFAULT_TRUE_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + _DEFAULT_ADDRESS_NAME
+DEFAULT_TRUE_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + '\\' + _DEFAULT_ADDRESS_NAME
 # 翻译失败时返回的默认值
 _DEFAULT_Translation_STR = 'NULL'
 
@@ -75,11 +75,12 @@ class GetTranslation:
         """
         if self._translation_exists(self._localization, module_name, translation_name):
             get_translation = self._get_configparser(self._localization).get(module_name, translation_name)
-            SCC_Logs.Logs(module_name=__name__).logger.debug(f'以从 {module_name} 中获取 {translation_name}'
+            SCC_Logs.Logs(module_name=__name__).logger.debug(f'已从 {module_name} 中获取 {translation_name}'
                                                              f' 对应的翻译 {get_translation} ')
         else:
             get_translation = _DEFAULT_Translation_STR
-            SCC_Logs.Logs(module_name=__name__).logger.warning(f'无法从 {module_name} 中获取'
+            SCC_Logs.Logs(module_name=__name__).logger.warning(f'无法从位于 {self._localization}'
+                                                               f' 中的 {module_name} 中获取'
                                                                f' {translation_name} 对应的翻译')
         return get_translation
 
