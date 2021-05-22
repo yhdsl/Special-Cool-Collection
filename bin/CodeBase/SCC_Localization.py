@@ -27,7 +27,7 @@ class GetTranslation:
     **translation_name: str** 待翻译的内容
 
     *类属性* \n
-    **translation() -> str** 返回已翻译的文本
+    **translation -> str** 返回已翻译的文本
     """
 
     def __init__(self, module_name: str, translation_name: str):

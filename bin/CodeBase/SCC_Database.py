@@ -25,7 +25,7 @@ class SQLGetStart:
     **create_db=False: bool** 设置为True以便于创建一个新的空数据库，**若原数据库存在则将被删除**
 
     *类属性* \n
-    **con: sqlite3.Connect** 返回指定数据库的connect对象
+    **con -> sqlite3.Connect** 返回指定数据库的connect对象
     """
 
     def __init__(self, db_adress: str, create_db=False):
@@ -62,7 +62,7 @@ class SQLDBUsefulMethod:
     实现con类部分常用的方法 \n
     **注意在其他类做出改变后调用该类的con_safe_close方法，以防更改丢失**
 
-    *类属性* \n
+    *类参数* \n
     **db_con: sqlite3.Connect** 数据库的con类
 
     *类方法* \n
@@ -98,7 +98,7 @@ class SQLTableMethod:
     """
     实现表(TABLE)的新建和删除，以及提供表名元组等常用功能
 
-    *类属性* \n
+    *类参数* \n
     **db_con: sqlite3.Connect** 数据库的con类
 
     *类方法* \n
@@ -160,7 +160,7 @@ class SQLColumnMethod:
     """
     实现数据列的增加，删除，修改，搜索
 
-    *类属性* \n
+    *类参数* \n
     **db_con: sqlite3.Connect** 数据库的con类 \n
     **table_name: str** 表名 \n
     **where_user='True': str** 不带where前缀的where语句，默认为所有内容

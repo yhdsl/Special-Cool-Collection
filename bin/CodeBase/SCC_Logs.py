@@ -52,7 +52,7 @@ class Logs:
     **first_run=False: bool** 是否新建一个日志文件 \n
 
     *类属性* \n
-    **logger: logging.Logger** 日志记录器 \n
+    **logger -> logging.Logger** 日志记录器 \n
     """
 
     def __init__(self, module_name=__name__, first_run=False):
