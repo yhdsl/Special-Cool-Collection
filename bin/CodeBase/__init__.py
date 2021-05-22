@@ -1,11 +1,13 @@
 import configparser
 import os
+from . import SCC_Localization as Lang
 from . import SCC_Logs as Logs
 
 # 配置文件地址
 CODEBASE_CONGIG_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r"\Config\CodeBase\Main.ini"
 SOFTWARE_VERSION = ''  # 创建日志文件时需要先给出版本号，该值一般来说没有用处
 __CODEBASE_SCC_LOGS = 'SCC_Logs'
+__CODEBASE_SCC_Localization = 'SCC_Localization'
 
 
 def __config_start(config_address: str, config_sections: str, config_name: str):
@@ -29,6 +31,12 @@ def __config_start(config_address: str, config_sections: str, config_name: str):
             config_get[1] = configparser_get.get(config_sections, config_name)
     return config_get
 
+
+# SCC_Localization模块配置初始化
+if not os.path.exists(Lang.DEFAULT_TRUE_ADDRESS):  # 确保Localization文件夹存在
+    os.mkdir(Lang.DEFAULT_TRUE_ADDRESS)
+if __config_start(CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_Localization, 'TRANSLATION_LANGUAGE')[0]:
+    Logs.LOG_LEVEL = __config_start(CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_Localization, 'TRANSLATION_LANGUAGE')[1]
 
 # SCC_Logs模块配置初始化
 if not os.path.exists(Logs.DEFAULT_TRUE_ADDRESS):  # 确保Logs文件夹存在
