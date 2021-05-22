@@ -17,7 +17,7 @@ def __config_start(config_address: str, config_sections: str, config_name: str):
     :param config_address: 配置文件地址
     :param config_sections: 配置的节名
     :param config_name: 配置的键
-    :return: 返回一个列表，其第一个元素为布尔值，第二个元素为读取的配置值
+    :return: 返回一个列表，其第一个元素为布尔值，第二个元素为读取的配置值，不会进行类型转换
     """
     config_get = [False, '']
     configparser_get = configparser.ConfigParser(empty_lines_in_values=False)
