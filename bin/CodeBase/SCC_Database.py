@@ -2,12 +2,16 @@
 **模块说明** \n
 软件的底层数据库模块，已提供基本的数据检验 \n
 **模块状态** \n
-DEBUG
+已完成
 """
 
 import os
 import sqlite3
-import SCC_Exception
+from . import SCC_Exception
+from . import SCC_Logs
+
+# 日志记录器，负责写入具体的触发参数和异常帧
+_logger = SCC_Logs.Logs(__name__).logger
 
 
 class SQLGetStart:
@@ -42,9 +46,12 @@ class SQLGetStart:
         if create_db:
             if os.path.exists(db_adress):
                 os.remove(db_adress)  # 此处可能因为文件被占用而抛出异常
+                _logger.info(f'旧数据库"{db_adress}"已被删除')
         else:
             if not os.path.exists(db_adress):
+                _logger.error(f'{db_adress}', stack_info=True)
                 raise SCC_Exception.DBNotExistError
+        _logger.debug(f'已与位于"{db_adress}"的数据库建立连接')
         return sqlite3.connect(db_adress)
 
 
@@ -66,7 +73,9 @@ class SQLDBUsefulMethod:
 
     def con_safe_close(self):
         if self._con.in_transaction:
+            _logger.info('数据库已提交')
             self._con.commit()
+        _logger.debug('数据库已关闭')
         self._con.close()
         return
 
@@ -122,16 +131,20 @@ class SQLTableMethod:
     def table_create(self, table_name: str, table_rules: str):
         table_check = self._table_exist_check(table_name)
         if table_check:
+            _logger.error(f'table_name={table_name} table_rules={table_rules}', stack_info=True)
             raise SCC_Exception.TableCreateError
         else:  # 未处理table_rules造成的sqlite3.OperationalError异常
             self._con.execute(f"CREATE TABLE {table_name} ({table_rules})")
+            _logger.debug(f'已创建新表{table_name}，规则为{table_rules}')
         return
 
     def table_drop(self, table_name: str):
         table_check = self._table_exist_check(table_name)
         if table_check:
             self._con.execute(f"DROP TABLE {table_name}")
+            _logger.debug(f'已删除表{table_name}')
         else:
+            _logger.error(f'{table_name}', stack_info=True)
             raise SCC_Exception.TableDropError
         return
 
@@ -171,28 +184,33 @@ class SQLColumnMethod:
         """检查传入的表名是否存在"""
         table_tup = SQLTableMethod(self._con).table_tup()
         if self.table not in table_tup:
+            _logger.error(f'{self.table}', stack_info=True)
             raise SCC_Exception.ColunmError
         return
 
     def column_insert(self, column_tup: tuple, value_tup: tuple):
         if len(value_tup) < len(column_tup):
+            _logger.error(f'column_tup={column_tup} value_tup={value_tup}', stack_info=True)
             raise SCC_Exception.ColunmValuesLessError
         column_add = ','.join(column_tup)
         value_add = '?,' * len(column_tup)
         self._con.execute(f"INSERT INTO {self.table} ({column_add}) VALUES ({value_add[:-1]})",
                           value_tup[:len(column_tup)])
+        _logger.debug(f'已在表{self.table}中插入{column_tup}，值为{value_tup}')
         return
 
     def column_delete(self, where_tup=None):
         if not where_tup:
             where_tup = ()
         self._con.execute(f"DELETE FROM {self.table} WHERE {self.where}", where_tup)
+        _logger.debug(f'已删除表{self.table}中的数据，规则为{self.where}，拓展元组为{where_tup}')
         return
 
     def column_update(self, column_tup: tuple, value_tup: tuple, where_tup=None):
         if not where_tup:
             where_tup = ()
         if len(value_tup) < len(column_tup):
+            _logger.error(f'column_tup={column_tup} value_tup={value_tup}', stack_info=True)
             raise SCC_Exception.ColunmValuesLessError
         update_add = []
         for i in column_tup:
@@ -200,6 +218,7 @@ class SQLColumnMethod:
         update_add = ','.join(update_add)
         self._con.execute(f"UPDATE {self.table} SET {update_add} WHERE {self.where}",
                           value_tup[:len(column_tup)] + where_tup)
+        _logger.debug(f'已在{self.table}中向{column_tup}更新为{value_tup}，规则为{self.where}，拓展元组为{where_tup}')
         return
 
     def column_select(self, column_tup: tuple, fetch_number=0, where_tup=None):
@@ -209,8 +228,10 @@ class SQLColumnMethod:
         cur = SQLDBUsefulMethod(self._con).con_get_cur()
         cur.execute(f"SELECT {column_add} FROM {self.table} WHERE {self.where}", where_tup)
         if fetch_number <= 0:
+            _logger.debug(f'搜索结果为{cur.fetchall()}')
             return cur.fetchall()
         else:
+            _logger.debug(f'搜索结果为{cur.fetchmany(size=fetch_number)}')
             return cur.fetchmany(size=fetch_number)
 
 
