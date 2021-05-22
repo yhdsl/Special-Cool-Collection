@@ -1,30 +1,33 @@
 """
-**模块说明** 软件的配置模块，目前提供两种配置管理 \n
-**模块状态** 开发中
+**模块说明** \n
+软件的配置模块，目前提供两种配置管理 \n
+**模块状态** \n
+开发中
 """
 
 import configparser
 import re
-import SCC_Database
-import SCC_Exception
+import os
+from . import SCC_Database
+from . import SCC_Exception
+from . import SCC_Logs
 
-# 默认DB文件存储地址
-DEFAULT_DB_ADDRESS = r'Configuration\\DataBase\\'
+# 默认配置文件存储地址
+_DEFAULT_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r"\Config\CodeBase"
 # DB表格式
-DEFAULT_TABLE_RULE = "config TEXT NOT NULL UNIQUE," \
-                     "value TEXT NOT NULL," \
-                     "changeable INTEGER DEFAULT 0," \
-                     "comment TEXT DEFAULT ''," \
-                     "type TEXT DEFAULT 'str'"
+_DEFAULT_TABLE_RULE = "config TEXT NOT NULL UNIQUE," \
+                      "value TEXT NOT NULL," \
+                      "changeable INTEGER DEFAULT 0," \
+                      "comment TEXT DEFAULT ''," \
+                      "type TEXT DEFAULT 'str'"
 # 配置允许的类型
-DEFAULE_TYPE_TUP = ('str', 'int', 'float', 'bool')
+_DEFAULE_TYPE_TUP = ('str', 'int', 'float', 'bool')
 # 视为TRUE的配置，大小写不敏感
-DEFAULT_BOOL_TRUE = ('1', 'yes', 'true', 'on')
+_DEFAULT_BOOL_TRUE = ('1', 'yes', 'true', 'on')
 # 视为FALSE的配置，大小写不敏感
-DEFAULT_BOOL_FALSE = ('0', 'no', 'false', 'off')
-
-# 默认INI文件存储地址
-DEFAULT_INI_ADDRESS = r'Configuration\\'
+_DEFAULT_BOOL_FALSE = ('0', 'no', 'false', 'off')
+# 日志记录器，负责写入具体的触发参数和异常帧
+_logger = SCC_Logs.Logs(__name__).logger
 
 
 class _ConfigDB:
@@ -54,12 +57,12 @@ class _ConfigDB:
     """
 
     def __init__(self, db_name: str, module_name='', config_name='', create_db=False):
-        self._con = SCC_Database.SQLGetStart(DEFAULT_DB_ADDRESS + db_name, create_db=create_db).con
+        self._con = SCC_Database.SQLGetStart(_DEFAULT_ADDRESS + '\\' + db_name, create_db=create_db).con
         self.module = module_name
         self.config = config_name
 
     def table_create(self):
-        SCC_Database.SQLTableMethod(self._con).table_create(self.module, DEFAULT_TABLE_RULE)
+        SCC_Database.SQLTableMethod(self._con).table_create(self.module, _DEFAULT_TABLE_RULE)
         return
 
     def table_del(self):
@@ -93,17 +96,20 @@ class _ConfigDB:
             changeable = 0
         else:
             changeable = 1
-        if db_type not in DEFAULE_TYPE_TUP:
+        if db_type not in _DEFAULE_TYPE_TUP:
             db_type = 'str'
         if self.config not in self.config_name_tup():
             SCC_Database.SQLColumnMethod(self._con, self.module).column_insert((
-                "config", "value", "changeable", "comment", "type"), (self.config, value, changeable, comment, db_type))
+                "config", "value", "changeable", "comment", "type"),
+                (self.config, value, changeable, comment, db_type))
         else:
+            _logger.error(f'config={self.config} config_name_tup={self.config_name_tup()}', stack_info=True)
             raise SCC_Exception.ConfigDBAddError
         return
 
     def value_del(self):
         if self.config not in self.config_name_tup():
+            _logger.error(f'config={self.config} config_name_tup={self.config_name_tup()}', stack_info=True)
             raise SCC_Exception.ConfigDBDropError
         else:
             SCC_Database.SQLColumnMethod(self._con, self.module, where_user="config IS ?"). \
@@ -112,6 +118,7 @@ class _ConfigDB:
 
     def value_get(self):
         if self.config not in self.config_name_tup():
+            _logger.error(f'config={self.config} config_name_tup={self.config_name_tup()}', stack_info=True)
             raise SCC_Exception.ConfigDBGetError
         else:
             value_get = SCC_Database.SQLColumnMethod(self._con, self.module, where_user="config IS ?"). \
@@ -119,18 +126,19 @@ class _ConfigDB:
                               where_tup=(self.config,))[0]
             value_get = list(value_get)
             value_get_str = value_get[1]
-            if value_get[4] == DEFAULE_TYPE_TUP[0]:
+            if value_get[4] == _DEFAULE_TYPE_TUP[0]:
                 value_return = value_get_str
-            elif value_get[4] == DEFAULE_TYPE_TUP[1]:
+            elif value_get[4] == _DEFAULE_TYPE_TUP[1]:
                 value_return = int(value_get_str)
-            elif value_get[4] == DEFAULE_TYPE_TUP[2]:
+            elif value_get[4] == _DEFAULE_TYPE_TUP[2]:
                 value_return = float(value_get_str)
-            elif value_get[4] == DEFAULE_TYPE_TUP[3]:
-                if value_get[1].casefold() in DEFAULT_BOOL_TRUE:
+            elif value_get[4] == _DEFAULE_TYPE_TUP[3]:
+                if value_get[1].casefold() in _DEFAULT_BOOL_TRUE:
                     value_return = True
-                elif value_get[1].casefold() in DEFAULT_BOOL_FALSE:
+                elif value_get[1].casefold() in _DEFAULT_BOOL_FALSE:
                     value_return = False
                 else:
+                    _logger.error(f'{value_get}', stack_info=True)
                     raise SCC_Exception.ConfigDBBoolError
             else:
                 value_return = value_get_str
@@ -155,6 +163,7 @@ class _ConfigDB:
         if len(config_list) == 0:
             return
         if self.config not in self.config_name_tup():
+            _logger.error(f'config={self.config} config_name_tup={self.config_name_tup()}', stack_info=True)
             raise SCC_Exception.ConfigDBDropError
         else:
             SCC_Database.SQLColumnMethod(self._con, self.module, where_user="config Is ?") \
@@ -168,7 +177,7 @@ class _ConfigDB:
 
 class _ConfigINI:
     """
-    配置模块中的ini文件管理部分，不包括ini注释管理部分
+    配置模块中的ini文件管理部分，不包括ini注释部分
 
     *类参数* \n
     **module_name='' (str)** 调用模块名称， 这将作为节名，等效于表名 \n
@@ -209,7 +218,7 @@ class _ConfigINI:
         return configparser_get
 
     def configparser_read_file(self, ini_name: str):
-        self._configparser.read_file(open(DEFAULT_INI_ADDRESS + ini_name, encoding='utf8'))
+        self._configparser.read_file(open(_DEFAULT_ADDRESS + ini_name, encoding='utf8'))
         return
 
     def sections_name_tup(self):
@@ -251,7 +260,7 @@ class _ConfigINI:
         return self._configparser.getboolean(self.module, self.config)
 
     def ini_write(self, ini_name: str):
-        self._configparser.write(open(DEFAULT_INI_ADDRESS + ini_name, mode='w+', encoding='utf8'))
+        self._configparser.write(open(_DEFAULT_ADDRESS + ini_name, mode='w+', encoding='utf8'))
         return
 
 
@@ -279,7 +288,7 @@ class _ConfigINIComment:
         """
         :return: 指定文件的内容列表
         """
-        return open(DEFAULT_INI_ADDRESS + self.ini_name, encoding='utf8').readlines()
+        return open(_DEFAULT_ADDRESS + self.ini_name, encoding='utf8').readlines()
 
     def _file_updata(self, file):
         """
@@ -333,7 +342,7 @@ class _ConfigINIComment:
         return
 
     def file_write(self):
-        open(DEFAULT_INI_ADDRESS + self.ini_name, mode='w', encoding='utf8').write(''.join(self._file))
+        open(_DEFAULT_ADDRESS + self.ini_name, mode='w', encoding='utf8').write(''.join(self._file))
         return
 
 
@@ -342,7 +351,7 @@ class Config:
 
 
 if __name__ == '__main__':
-    DEFAULT_INI_ADDRESS = r'D:\Programs\Programs\Working\Special-Cool-Collection\test\\'
+    _DEFAULT_ADDRESS = r'D:\Programs\Programs\Working\Special-Cool-Collection\test\\'
     test_1 = _ConfigINIComment('test.ini')
     test_1.comment_sections_updata('test1', 'one', ('true', 'just1 *'))
     # print(test_1.test())
