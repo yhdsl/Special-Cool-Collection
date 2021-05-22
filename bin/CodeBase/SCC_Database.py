@@ -21,7 +21,7 @@ class SQLGetStart:
     下文connect对象简称con类
 
     *类参数* \n
-    **db_adress: str** 指定的数据库地址
+    **db_adress: str** 指定的数据库地址 \n
     **create_db=False: bool** 设置为True以便于创建一个新的空数据库，**若原数据库存在则将被删除**
 
     *类属性* \n
@@ -66,8 +66,7 @@ class SQLDBUsefulMethod:
     **db_con: sqlite3.Connect** 数据库的con类
 
     *类方法* \n
-    **con_safe_close()** con类的安全退出方法，现在如果con类未作出改变则不会提交 \n
-    **con_get_cur() (sqlite3.cursor)** 获取cur类，更推荐直接使用con类的cursor方法
+    **con_safe_close()** con类的安全退出方法，现在如果con类未作出改变则不会提交
     """
 
     def __init__(self, db_con: sqlite3.Connection):
@@ -81,7 +80,8 @@ class SQLDBUsefulMethod:
         self._con.close()
         return
 
-    def con_get_cur(self):
+    def _con_get_cur(self):
+        """获取cur，目前已废弃"""
         return self._con.cursor()
 
     def _con_rollback(self):  # TODO(长期) 实现回滚操作
@@ -167,7 +167,7 @@ class SQLColumnMethod:
 
     *类方法* \n
     数据的修改以column_tup为主，value_tup中多余的数据将被忽略 \n
-    下文中where_tup为WHERE语句中占位符的传入数据元组
+    下文中where_tup为WHERE语句中占位符的传入数据元组 \n
     **column_insert(column_tup: tuple, value_tup: tuple)** 增加数据 \n
     **column_delete(where_tup=None)** 删除数据 \n
     **column_update(column_tup: tuple, value_tup: tuple, where_tup=None)** 更新数据 \n
@@ -182,7 +182,7 @@ class SQLColumnMethod:
 
     def _table_check(self):
         """检查传入的表名是否存在"""
-        table_tup = SQLTableMethod(self._con).table_tup()
+        table_tup = self._con.cursor()
         if self.table not in table_tup:
             _logger.error(f'table_name={self.table}', stack_info=True)
             raise SCC_Exception.ColunmError
@@ -226,7 +226,7 @@ class SQLColumnMethod:
         if not where_tup:
             where_tup = ()
         column_add = ','.join(column_tup)
-        cur = SQLDBUsefulMethod(self._con).con_get_cur()
+        cur = self._con.cursor()
         cur.execute(f"SELECT {column_add} FROM {self.table} WHERE {self.where}", where_tup)
         if fetch_number <= 0:
             _logger.debug(f'搜索结果为{cur.fetchall()}')

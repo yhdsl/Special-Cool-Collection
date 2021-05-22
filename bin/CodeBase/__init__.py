@@ -6,6 +6,8 @@
 # 3.生成新的日志文件
 # 4.复检配置的可用性，并写入日志
 # 5.检查日志等级，如果为OFF则删除新建立的日志文件
+# -----CodeBase包说明-----
+# pass
 
 import configparser
 import os

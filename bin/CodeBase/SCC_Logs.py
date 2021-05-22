@@ -44,15 +44,15 @@ LOG_LEVEL_INT = logging.INFO
 
 class Logs:
     """
-    实现日志记录的相关功能
+    实现日志记录的相关功能 \n
     其中first_run参数仅由启动模块和调试时使用，用于建立一个新的日志文件
 
     *类参数* \n
     **module_name=__name__: str** 包名 \n
-    **first_run=False: bool** 是否新建一个日志文件 \n
+    **first_run=False: bool** 是否新建一个日志文件
 
     *类属性* \n
-    **logger -> logging.Logger** 日志记录器 \n
+    **logger -> logging.Logger** 日志记录器
     """
 
     def __init__(self, module_name=__name__, first_run=False):

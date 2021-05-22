@@ -19,7 +19,7 @@ _DEFAULT_Translation_STR = 'NULL'
 
 class GetTranslation:
     """
-    获取指定内容的翻译
+    获取指定内容的翻译 \n
     保证无论如何均会返回一个值
 
     *类参数* \n
