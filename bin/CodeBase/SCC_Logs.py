@@ -9,35 +9,35 @@ import logging
 import os
 import time
 
-# 日志文件存储的绝对地址
+# 日志文件夹的地址
 DEFAULT_TRUE_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r'\Logs'
 # 最大日志文件数量，注意文件是从0开始计数的，默认为5，该值由配置文件优先提供
 MAX_LOGS_FILES = 5
 # 不带后缀名的日志文件名，注意该项更该后本模块可能无法正常工作
 _DEFAULT_FILE_NAME = 'f"SCC_Logs{logs_int}"'
-# 程序版本号，由启动模块赋值
+# 程序版本号，由启动模块赋值，默认为空
 SOFTWARE_VERSION = ''
 # 日志初始化时的首行内容
 _LOGS_FILE_FIRST_LINE = r'f"开始记录日志  当前时间{logs_time}  记录等级{logs_level}  SCC版本号 v{logs_version}\n"'
 # 日志的时间格式
 _LOGS_TIME_FORMAT = '%Y/%m/%d %I:%M:%S %p'
 # 日志的内容格式
-_LOGS_FORMATTER_FORMAT = r'[%(asctime)s] %(levelname)s %(name)s\%(module)s.%(funcName)s.%(lineno)d: %(message)s'
-# 日志等级对应的字典，保证双向读取，其中OFF为关闭日志等级
+_LOGS_FORMATTER_FORMAT = '[%(asctime)s] <%(levelname)s> %(module)s.%(funcName)s.%(lineno)d: \n%(message)s'
+# 日志等级对应的字典，保证双向读取，其中OFF等级为关闭日志
 LOGS_LEVEL_DIR = {logging.CRITICAL: 'CRITICAL',
                   logging.ERROR: 'ERROR',
                   logging.WARNING: 'WARNING',
                   logging.INFO: 'INFO',
                   logging.DEBUG: 'DEBUG',
                   logging.NOTSET: 'NOTSET',
-                  100: 'OFF',
+                  logging.CRITICAL + 100: 'OFF',
                   'CRITICAL': logging.CRITICAL,
                   'ERROR': logging.ERROR,
                   'WARNING': logging.WARNING,
                   'INFO': logging.INFO,
                   'DEBUG': logging.DEBUG,
                   'NOTSET': logging.NOTSET,
-                  'OFF': 100}
+                  'OFF': logging.CRITICAL + 100}
 # 日志等级，默认为INFO，该值由配置文件优先提供
 LOG_LEVEL_INT = logging.INFO
 
@@ -48,25 +48,23 @@ class Logs:
     其中first_run参数仅由启动模块和调试时使用，用于建立一个新的日志文件
 
     *类参数* \n
-    **module_name=__name__: str** 包名 \n
     **first_run=False: bool** 是否新建一个日志文件
 
     *类属性* \n
     **logger -> logging.Logger** 日志记录器
     """
 
-    def __init__(self, module_name=__name__, first_run=False):
+    def __init__(self, first_run=False):
         if first_run:
             self._create_new_file()
         else:
-            self.logger = self._get_log(module_name=module_name,
-                                        file_address=rf'{DEFAULT_TRUE_ADDRESS}\{self._get_file_name()}.txt')
+            self.logger = self._get_log(file_address=rf'{DEFAULT_TRUE_ADDRESS}\{self._get_file_name()}.txt')
 
     @staticmethod
     def _get_file_name(get_int=False):
         """
-        获取当前日志文件名称或返回日志数字特征值列表
-        该方法尽量保证文件名称不是递增时仍然可以正常运行
+        获取当前日志文件名称或返回日志数字特征值列表 \n
+        该方法尽量保证文件名称不是递增时仍然可以正常运行 \n
         文件不存在时可能会触发异常
 
         :param get_int: 是否返回包含所有文件数字标识的列表，默认为False
@@ -90,7 +88,7 @@ class Logs:
 
     def _create_new_file(self):
         """
-        创建一个新的日志文件，并向其写入初始化内容
+        创建一个新的日志文件，并向其写入初始化内容 \n
         仅用于该模块的初始化进程
         """
         if not os.path.isdir(DEFAULT_TRUE_ADDRESS):  # 保证Logs文件夹存在
@@ -139,22 +137,17 @@ class Logs:
         """
         return logging.Formatter(_LOGS_FORMATTER_FORMAT, _LOGS_TIME_FORMAT)
 
-    def _get_log(self, module_name: str, file_address: str):
+    def _get_log(self, file_address: str):
         """
         返回记录器，并绑定相关的处理器和格式器
 
-        :param module_name: 模块包名
         :param file_address: 日志文件地址
         :return:
         """
-        logger = logging.getLogger(module_name)
+        logger = logging.getLogger()
         logger.setLevel(LOG_LEVEL_INT)
         logger_formatter = self._get_formatter()
         logger_handler = self._get_handler(file_address=file_address)
         logger_handler.setFormatter(logger_formatter)
         logger.addHandler(logger_handler)
         return logger
-
-
-if __name__ == '__main__':
-    pass

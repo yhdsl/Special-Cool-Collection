@@ -1,5 +1,5 @@
-# CodeBase初始化进程
-# 本模块实现自定义配置的自动载入
+# -----CodeBase包 初始化进程-----
+# 本模块实现自定义配置的自动载入功能
 # 启动模块负责实现
 # 1.启动该初始化进程
 # 2.向Log模块传入程序版本号
@@ -7,7 +7,13 @@
 # 4.复检配置的可用性，并写入日志
 # 5.检查日志等级，如果为OFF则删除新建立的日志文件
 # -----CodeBase包说明-----
-# pass
+# SCC_Configuration 提供配置的读取功能
+# SCC_Database 提供数据库相关功能
+# SCC_Exception 包含所有的自定义异常
+# SCC_Localization 提供语言选择功能，已在此模块中导入
+# SCC_Logs 提供日志记录功能，已在此模块中导入
+# SCC_Scrapy 开发中
+# SCC_Subprocess 开发中
 
 import configparser
 import os
@@ -16,15 +22,15 @@ from . import SCC_Logs as Logs
 
 # 配置文件地址
 __CODEBASE_CONGIG_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r"\Config\CodeBase\Main.ini"
-# 以下为各模块名称
+# 初始化的模块名称
 __CODEBASE_SCC_LOGS = 'SCC_Logs'
 __CODEBASE_SCC_Localization = 'SCC_Localization'
 
 
 def _config_check(config_address: str, config_sections: str, config_name: str):
     """
-    用于从配置文件中读取自定义配置
-    该函数仅应当在初始化和启动模块自检时被调用，其旨在保证最大的稳定性
+    用于从配置文件中读取自定义配置 \n
+    该函数仅应当在初始化和启动模块自检时被调用，其旨在保证最大的稳定性 \n
     其他配置需求应调用CodeBase包中的配置模块来实现
 
     :param config_address: 配置文件地址
@@ -57,6 +63,3 @@ if _config_check(__CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_LOGS, 'MAX_LOGS_FILES
 if _config_check(__CODEBASE_CONGIG_ADDRESS, __CODEBASE_SCC_LOGS, 'LOG_LEVEL_STR')[0]:
     Logs.LOG_LEVEL = Logs.LOGS_LEVEL_DIR[_config_check(__CODEBASE_CONGIG_ADDRESS,
                                                        __CODEBASE_SCC_LOGS, 'LOG_LEVEL_STR')[1]]
-
-if __name__ == '__main__':
-    pass

@@ -9,7 +9,7 @@ from . import SCC_Localization as Lang
 from . import SCC_Logs
 
 # 日志记录器，仅记录异常文本，具体的触发参数和异常帧由各模块负责写入
-_logger = SCC_Logs.Logs(__name__).logger
+_logger = SCC_Logs.Logs().logger
 
 # 底层数据库异常部分
 # SCC_Database
@@ -94,5 +94,13 @@ class ConfigDBGetError(Exception):
     """DB中没有该配置名称"""
     def __str__(self):
         lang = Lang.GetTranslation('SCC_Configuration', 'ConfigDBGetError').translation
+        _logger.error(f'异常已触发 {lang} 具体触发参数见上方内容')
+        return lang
+
+
+class ConfigAddressError(Exception):
+    """没有配置文件"""
+    def __str__(self):
+        lang = Lang.GetTranslation('SCC_Configuration', 'ConfigAddressError').translation
         _logger.error(f'异常已触发 {lang} 具体触发参数见上方内容')
         return lang

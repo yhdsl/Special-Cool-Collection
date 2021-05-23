@@ -7,11 +7,15 @@
 
 import os
 import sqlite3
-from . import SCC_Exception
-from . import SCC_Logs
+if __name__ == '__main__':
+    from CodeBase import SCC_Exception
+    from CodeBase import SCC_Logs
+else:
+    from . import SCC_Exception
+    from . import SCC_Logs
 
 # 日志记录器，负责写入具体的触发参数和异常帧
-_logger = SCC_Logs.Logs(__name__).logger
+_logger = SCC_Logs.Logs().logger
 
 
 class SQLGetStart:
@@ -45,7 +49,7 @@ class SQLGetStart:
                 try:
                     os.remove(db_adress)
                 except PermissionError:
-                    _logger.warning(f'数据库"{db_adress}"被另一个程序占用，已储存至临时数据库内')
+                    _logger.warning(f'数据库"{db_adress}"被另一个程序占用，新内容将储存至临时数据库内')
                     db_adress = db_adress.rsplit('.', maxsplit=1)[0] + '_temp.db'
                 else:
                     _logger.info(f'旧数据库"{db_adress}"已被删除')
@@ -182,9 +186,9 @@ class SQLColumnMethod:
 
     def _table_check(self):
         """检查传入的表名是否存在"""
-        table_tup = self._con.cursor()
+        table_tup = SQLTableMethod(self._con).table_tup()
         if self.table not in table_tup:
-            _logger.error(f'table_name={self.table}', stack_info=True)
+            _logger.error(f'table_name={self.table} table_tup={table_tup}', stack_info=True)
             raise SCC_Exception.ColunmError
         return
 

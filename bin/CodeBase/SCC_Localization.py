@@ -7,7 +7,10 @@
 
 import configparser
 import os
-from . import SCC_Logs
+if __name__ == '__main__':
+    from CodeBase import SCC_Logs
+else:
+    from . import SCC_Logs
 
 # 文本显示的语言，默认为简体中文(zh-CN)，该值由配置文件优先提供
 TRANSLATION_LANGUAGE = 'zh-CN'
@@ -15,6 +18,8 @@ TRANSLATION_LANGUAGE = 'zh-CN'
 DEFAULT_TRUE_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r'\Localization'
 # 翻译失败时返回的默认值
 _DEFAULT_Translation_STR = 'NULL'
+# 日志记录器
+_logger = SCC_Logs.Logs().logger
 
 
 class GetTranslation:
@@ -48,6 +53,9 @@ class GetTranslation:
             get_configparser = self._get_configparser(ini_address)
             if get_configparser.has_option(module_name, config_name):
                 translation_exists = True
+        if not translation_exists:
+            _logger.warning(f'未在位于{ini_address}的{module_name}里找到{config_name}对应的翻译，'
+                            f'已返回默认值{_DEFAULT_Translation_STR}')
         return translation_exists
 
     @staticmethod
@@ -73,15 +81,7 @@ class GetTranslation:
         """
         if self._translation_exists(self._localization, module_name, translation_name):
             get_translation = self._get_configparser(self._localization).get(module_name, translation_name)
-            SCC_Logs.Logs(module_name=__name__).logger.debug(f'已从 {module_name} 中获取 {translation_name} '
-                                                             f'对应的翻译内容 {get_translation} ')
+            SCC_Logs.Logs().logger.debug(f'已从 {module_name} 中获取 {translation_name} 对应的翻译内容 {get_translation}')
         else:
             get_translation = _DEFAULT_Translation_STR
-            SCC_Logs.Logs(module_name=__name__).logger.warning(f'无法从位于 {self._localization} '
-                                                               f'中的 {module_name} 内获取 '
-                                                               f'{translation_name} 对应的翻译内容')
         return get_translation
-
-
-if __name__ == '__main__':
-    pass
