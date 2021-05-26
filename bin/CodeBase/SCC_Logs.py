@@ -45,7 +45,7 @@ LOG_LEVEL_INT = logging.INFO
 class Logs:
     """
     实现日志记录的相关功能 \n
-    其中first_run参数仅由启动模块和调试时使用，用于建立一个新的日志文件
+    其中first_run和test_run参数仅由启动模块和调试时使用，用于建立一个新的日志文件和日志记录器的初始化
 
     *类参数* \n
     **module_name=None: str** 传入日志记录器的包名，默认为根记录器 \n
@@ -64,7 +64,7 @@ class Logs:
         if first_run:
             if not test_run:
                 self._create_new_file()
-            self.log_setting(file_address=rf'{DEFAULT_TRUE_ADDRESS}\{self._get_file_name()}.txt',
+            self.log_setting(file_address=rf'{DEFAULT_TRUE_ADDRESS}\{self._get_file_name()}.log',
                              module_name=module_name)
         else:
             self.logger = self.get_logger(module_name=module_name)
@@ -105,23 +105,23 @@ class Logs:
         file_int_list = self._get_file_name(get_int=True)
         if not file_int_list:  # 生成0号文件
             file_name = eval(_DEFAULT_FILE_NAME, {'logs_int': 0})
-            file_open = open(rf"{DEFAULT_TRUE_ADDRESS}\{file_name}.txt", encoding='utf8', mode='x')
+            file_open = open(rf"{DEFAULT_TRUE_ADDRESS}\{file_name}.log", encoding='utf8', mode='x')
         else:
             if max(file_int_list) < MAX_LOGS_FILES - 1:  # 文件数量未达到上限
                 file_name = eval(_DEFAULT_FILE_NAME, {'logs_int': max(file_int_list) + 1})
-                file_open = open(rf"{DEFAULT_TRUE_ADDRESS}\{file_name}.txt", encoding='utf8', mode='x')
+                file_open = open(rf"{DEFAULT_TRUE_ADDRESS}\{file_name}.log", encoding='utf8', mode='x')
             else:
                 remove_file_name = eval(_DEFAULT_FILE_NAME, {'logs_int': min(file_int_list)})
-                os.remove(rf"{DEFAULT_TRUE_ADDRESS}\{remove_file_name}.txt")  # 移除超出上限的文件
+                os.remove(rf"{DEFAULT_TRUE_ADDRESS}\{remove_file_name}.log")  # 移除超出上限的文件
                 file_int_list.remove(min(file_int_list))
                 for i in range(0, MAX_LOGS_FILES - 1):
                     file_old_name1 = rf"{DEFAULT_TRUE_ADDRESS}"
-                    file_old_name2 = rf"\{eval(_DEFAULT_FILE_NAME, {'logs_int': file_int_list[i]})}.txt"
+                    file_old_name2 = rf"\{eval(_DEFAULT_FILE_NAME, {'logs_int': file_int_list[i]})}.log"
                     file_old_name = file_old_name1 + file_old_name2
-                    file_new_name = rf"{DEFAULT_TRUE_ADDRESS}\{eval(_DEFAULT_FILE_NAME, {'logs_int': i})}.txt"
+                    file_new_name = rf"{DEFAULT_TRUE_ADDRESS}\{eval(_DEFAULT_FILE_NAME, {'logs_int': i})}.log"
                     os.rename(file_old_name, file_new_name)
                 file_name = eval(_DEFAULT_FILE_NAME, {'logs_int': MAX_LOGS_FILES - 1})
-                file_open = open(rf"{DEFAULT_TRUE_ADDRESS}\{file_name}.txt", encoding='utf8', mode='x')
+                file_open = open(rf"{DEFAULT_TRUE_ADDRESS}\{file_name}.log", encoding='utf8', mode='x')
         file_open.write(eval(_LOGS_FILE_FIRST_LINE,
                              {'logs_time': time.strftime(_LOGS_TIME_FORMAT),
                               'logs_level': LOGS_LEVEL_DIR[LOG_LEVEL_INT],
@@ -148,7 +148,8 @@ class Logs:
 
     def log_setting(self, file_address: str, module_name=None):
         """
-        记录器的初始化，负责设置日志等级，绑定格式器和处理器
+        记录器的初始化，负责设置日志等级，绑定格式器和处理器 \n
+        *多次调用此方法会造成日志的重复记录*
 
         :param file_address: 日志文件地址
         :param module_name: 记录器名称，默认为None

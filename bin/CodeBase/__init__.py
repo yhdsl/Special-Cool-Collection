@@ -1,14 +1,14 @@
 # -----CodeBase包 初始化进程-----
-# 本模块实现自定义配置的自动载入功能
+# 本模块负责实现自定义配置的自动载入功能
 # 启动模块负责实现
 # 1.启动该初始化进程
-# 2.向Log模块传入程序版本号
-# 3.生成新的日志文件
+# 2.向日志模块传入程序版本号
+# 3.生成新的日志文件并初始化日志记录器
 # 4.复检配置的可用性，并写入日志
 # 5.检查日志等级，如果为OFF则删除新建立的日志文件
-# -----CodeBase包说明-----
-# SCC_Configuration 提供配置的读取功能
-# SCC_Database 提供数据库相关功能
+# -----CodeBase包 说明-----
+# SCC_Configuration 实现配置文件的相关功能
+# SCC_Database 实现底层数据库的相关功能
 # SCC_Exception 包含所有的自定义异常
 # SCC_Localization 提供语言选择功能，已在此模块中导入
 # SCC_Logs 提供日志记录功能，已在此模块中导入
@@ -21,8 +21,8 @@ from . import SCC_Localization as Lang
 from . import SCC_Logs as Logs
 
 # 配置文件地址
-__CODEBASE_CONGIG_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r"\Config\CodeBase\Main.ini"
-# 初始化的模块名称
+__CODEBASE_CONGIG_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r'\Config\CodeBase\Main.ini'
+# 已在初始化导入的模块名称
 __CODEBASE_SCC_LOGS = 'SCC_Logs'
 __CODEBASE_SCC_Localization = 'SCC_Localization'
 
@@ -36,7 +36,7 @@ def _config_check(config_address: str, config_sections: str, config_name: str):
     :param config_address: 配置文件地址
     :param config_sections: 配置的节名
     :param config_name: 配置的键值
-    :return: 返回一个列表，其第一个元素为布尔值，表面配置是否存在；第二个元素为读取的配置值，并且不会进行类型转换，默认为 ''
+    :return: 返回一个列表，其第一个元素为布尔值，表明配置是否存在；第二个元素为读取的配置值，并且不会进行类型转换，默认为 ''
     """
     config_get = [False, '']
     configparser_get = configparser.ConfigParser(empty_lines_in_values=False)

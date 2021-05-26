@@ -18,6 +18,8 @@ TRANSLATION_LANGUAGE = 'zh-CN'
 DEFAULT_TRUE_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r'\Localization'
 # 翻译失败时返回的默认值
 _DEFAULT_Translation_STR = 'NULL'
+# 本模块的日志拓展选项，用于输出更为详细的日志内容
+_LOG_STACK_BOOL = False
 
 
 class GetTranslation:
@@ -53,8 +55,8 @@ class GetTranslation:
             if get_configparser.has_option(module_name, config_name):
                 translation_exists = True
         if not translation_exists:
-            self._logger.warning(f'未在位于{ini_address}的{module_name}里找到{config_name}对应的翻译，'
-                                 f'已返回默认值{_DEFAULT_Translation_STR}')
+            self._logger.warning(f'未在位于 <{ini_address}> 的 <{module_name}> 里找到 <{config_name}> 对应的文本内容，'
+                                 f'已返回默认值 <{_DEFAULT_Translation_STR}>', stack_info=_LOG_STACK_BOOL)
         return translation_exists
 
     @staticmethod
@@ -80,7 +82,8 @@ class GetTranslation:
         """
         if self._translation_exists(self._localization, module_name, translation_name):
             get_translation = self._get_configparser(self._localization).get(module_name, translation_name)
-            self._logger.debug(f'已从 {module_name} 中获取 {translation_name} 对应的翻译内容 {get_translation}')
+            self._logger.debug(f'已从 <{module_name}> 中获取 <{translation_name}> 对应的翻译内容 <{get_translation}>',
+                               stack_info=_LOG_STACK_BOOL)
         else:
             get_translation = _DEFAULT_Translation_STR
         return get_translation

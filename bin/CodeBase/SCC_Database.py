@@ -16,6 +16,8 @@ else:
 
 # 日志记录器，负责写入具体的触发参数和异常帧
 _logger = SCC_Logs.Logs().logger
+# 本模块的日志拓展选项，用于输出更为详细的日志内容
+_LOG_STACK_BOOL = False
 
 
 class SQLGetStart:
@@ -49,15 +51,16 @@ class SQLGetStart:
                 try:
                     os.remove(db_adress)
                 except PermissionError:
-                    _logger.warning(f'数据库"{db_adress}"被另一个程序占用，新内容将储存至临时数据库内')
+                    _logger.warning(f'数据库 <{db_adress}> 被另一个程序占用，新内容将储存至临时数据库内',
+                                    stack_info=_LOG_STACK_BOOL)
                     db_adress = db_adress.rsplit('.', maxsplit=1)[0] + '_temp.db'
                 else:
-                    _logger.info(f'旧数据库"{db_adress}"已被删除')
+                    _logger.info(f'旧数据库 <{db_adress}> 已被删除', stack_info=_LOG_STACK_BOOL)
         else:
             if not os.path.exists(db_adress):
                 _logger.error(f'db_adress={db_adress}', stack_info=True)
                 raise SCC_Exception.DBNotExistError
-        _logger.debug(f'已与位于"{db_adress}"的数据库建立连接')
+        _logger.debug(f'已与位于 <{db_adress}> 的数据库建立连接', stack_info=_LOG_STACK_BOOL)
         return sqlite3.connect(db_adress)
 
 
@@ -78,9 +81,9 @@ class SQLDBUsefulMethod:
 
     def con_safe_close(self):
         if self._con.in_transaction:
-            _logger.info('数据库已提交')
+            _logger.info('数据库已提交', stack_info=_LOG_STACK_BOOL)
             self._con.commit()
-        _logger.debug('数据库已关闭')
+        _logger.debug('数据库已关闭', stack_info=_LOG_STACK_BOOL)
         self._con.close()
         return
 
@@ -143,14 +146,14 @@ class SQLTableMethod:
             raise SCC_Exception.TableCreateError
         else:  # 无法处理table_rules造成的sqlite3.OperationalError异常
             self._con.execute(f"CREATE TABLE {table_name} ({table_rules})")
-            _logger.debug(f'已创建新表{table_name}，规则为{table_rules}')
+            _logger.debug(f'已创建新表 <{table_name}> ，规则为 <{table_rules}>', stack_info=_LOG_STACK_BOOL)
         return
 
     def table_drop(self, table_name: str):
         table_check = self._table_exist_check(table_name)
         if table_check:
             self._con.execute(f"DROP TABLE {table_name}")
-            _logger.debug(f'已删除表{table_name}')
+            _logger.debug(f'已删除表 <{table_name}>', stack_info=_LOG_STACK_BOOL)
         else:
             _logger.error(f'table_name={table_name}', stack_info=True)
             raise SCC_Exception.TableDropError
@@ -200,14 +203,16 @@ class SQLColumnMethod:
         value_add = '?,' * len(column_tup)
         self._con.execute(f"INSERT INTO {self.table} ({column_add}) VALUES ({value_add[:-1]})",
                           value_tup[:len(column_tup)])
-        _logger.debug(f'已在表{self.table}中插入{column_tup}，值为{value_tup[:len(column_tup)]}')
+        _logger.debug(f'已在表 <{self.table}> 中插入 <{column_tup}> ，值为 <{value_tup[:len(column_tup)]}>',
+                      stack_info=_LOG_STACK_BOOL)
         return
 
     def column_delete(self, where_tup=None):
         if not where_tup:
             where_tup = ()
         self._con.execute(f"DELETE FROM {self.table} WHERE {self.where}", where_tup)
-        _logger.debug(f'已删除表{self.table}中的数据，过滤规则为{self.where}，补充内容为{where_tup}')
+        _logger.debug(f'已删除表 <{self.table}> 中的数据，过滤规则为 <{self.where}>，补充内容为 <{where_tup}>',
+                      stack_info=_LOG_STACK_BOOL)
         return
 
     def column_update(self, column_tup: tuple, value_tup: tuple, where_tup=None):
@@ -222,8 +227,8 @@ class SQLColumnMethod:
         update_add = ','.join(update_add)
         self._con.execute(f"UPDATE {self.table} SET {update_add} WHERE {self.where}",
                           value_tup[:len(column_tup)] + where_tup)
-        _logger.debug(f'已在{self.table}中将{column_tup}的数值更新为{value_tup[:len(column_tup)]}，'
-                      f'过滤规则为{self.where}，补充内容为为{where_tup}')
+        _logger.debug(f'已在 <{self.table}> 中将 <{column_tup}> 的数值更新为 <{value_tup[:len(column_tup)]}>，'
+                      f'过滤规则为 <{self.where}> ，补充内容为为 <{where_tup}>', stack_info=_LOG_STACK_BOOL)
         return
 
     def column_select(self, column_tup: tuple, fetch_number=0, where_tup=None):
@@ -233,11 +238,11 @@ class SQLColumnMethod:
         cur = self._con.cursor()
         cur.execute(f"SELECT {column_add} FROM {self.table} WHERE {self.where}", where_tup)
         if fetch_number <= 0:
-            _logger.debug(f'搜索结果为{cur.fetchall()}')
-            return cur.fetchall()
+            cur_back = cur.fetchall()
         else:
-            _logger.debug(f'搜索结果为{cur.fetchmany(size=fetch_number)}')
-            return cur.fetchmany(size=fetch_number)
+            cur_back = cur.fetchmany(size=fetch_number)
+        _logger.debug(f'搜索结果为 <{cur_back}>', stack_info=_LOG_STACK_BOOL)
+        return cur_back
 
 
 class __SQLWhereMethod:
