@@ -48,17 +48,26 @@ class Logs:
     其中first_run参数仅由启动模块和调试时使用，用于建立一个新的日志文件
 
     *类参数* \n
-    **first_run=False: bool** 是否新建一个日志文件
+    **module_name=None: str** 传入日志记录器的包名，默认为根记录器 \n
+    **first_run=False: bool** 是否新建一个日志文件并初始化记录器 \n
+    **test_run=False: bool** 当设置为真时不新建一个日志文件，需要和first_run一同使用
 
     *类属性* \n
-    **logger -> logging.Logger** 日志记录器
+    **logger -> logging.Logger** 日志记录器，方法get_logger的便捷方式
+
+    *类方法* \n
+    **log_setting(file_address: str, module_name=None)** 初始化记录器，传入日志存放位置和包名 \n
+    **get_logger(module_name=None) -> logging.Logger** 返回日志记录器
     """
 
-    def __init__(self, first_run=False):
+    def __init__(self, module_name=None, first_run=False, test_run=False):
         if first_run:
-            self._create_new_file()
+            if not test_run:
+                self._create_new_file()
+            self.log_setting(file_address=rf'{DEFAULT_TRUE_ADDRESS}\{self._get_file_name()}.txt',
+                             module_name=module_name)
         else:
-            self.logger = self._get_log(file_address=rf'{DEFAULT_TRUE_ADDRESS}\{self._get_file_name()}.txt')
+            self.logger = self.get_logger(module_name=module_name)
 
     @staticmethod
     def _get_file_name(get_int=False):
@@ -137,17 +146,21 @@ class Logs:
         """
         return logging.Formatter(_LOGS_FORMATTER_FORMAT, _LOGS_TIME_FORMAT)
 
-    def _get_log(self, file_address: str):
+    def log_setting(self, file_address: str, module_name=None):
         """
-        返回记录器，并绑定相关的处理器和格式器
+        记录器的初始化，负责设置日志等级，绑定格式器和处理器
 
         :param file_address: 日志文件地址
-        :return:
+        :param module_name: 记录器名称，默认为None
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(module_name)
         logger.setLevel(LOG_LEVEL_INT)
         logger_formatter = self._get_formatter()
         logger_handler = self._get_handler(file_address=file_address)
         logger_handler.setFormatter(logger_formatter)
         logger.addHandler(logger_handler)
-        return logger
+        return
+
+    @staticmethod
+    def get_logger(module_name=None):
+        return logging.getLogger(module_name)

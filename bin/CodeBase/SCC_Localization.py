@@ -18,8 +18,6 @@ TRANSLATION_LANGUAGE = 'zh-CN'
 DEFAULT_TRUE_ADDRESS = os.path.dirname(str(__file__).rsplit('\\', maxsplit=1)[0]) + r'\Localization'
 # 翻译失败时返回的默认值
 _DEFAULT_Translation_STR = 'NULL'
-# 日志记录器
-_logger = SCC_Logs.Logs().logger
 
 
 class GetTranslation:
@@ -38,6 +36,7 @@ class GetTranslation:
     def __init__(self, module_name: str, translation_name: str):
         self._localization = rf"{DEFAULT_TRUE_ADDRESS}\{TRANSLATION_LANGUAGE}.ini"
         self.translation = self._get_translation(module_name, translation_name)
+        self._logger = SCC_Logs.Logs().logger
 
     def _translation_exists(self, ini_address: str, module_name: str, config_name: str):
         """
@@ -54,8 +53,8 @@ class GetTranslation:
             if get_configparser.has_option(module_name, config_name):
                 translation_exists = True
         if not translation_exists:
-            _logger.warning(f'未在位于{ini_address}的{module_name}里找到{config_name}对应的翻译，'
-                            f'已返回默认值{_DEFAULT_Translation_STR}')
+            self._logger.warning(f'未在位于{ini_address}的{module_name}里找到{config_name}对应的翻译，'
+                                 f'已返回默认值{_DEFAULT_Translation_STR}')
         return translation_exists
 
     @staticmethod
@@ -81,7 +80,7 @@ class GetTranslation:
         """
         if self._translation_exists(self._localization, module_name, translation_name):
             get_translation = self._get_configparser(self._localization).get(module_name, translation_name)
-            SCC_Logs.Logs().logger.debug(f'已从 {module_name} 中获取 {translation_name} 对应的翻译内容 {get_translation}')
+            self._logger.debug(f'已从 {module_name} 中获取 {translation_name} 对应的翻译内容 {get_translation}')
         else:
             get_translation = _DEFAULT_Translation_STR
         return get_translation
